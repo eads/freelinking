@@ -38,7 +38,8 @@ function freelinking_page($thetitle = NULL) {
     if ($noderestrict != 'none') { // need to add to the where clause
       $query .= ' AND type = "%s"';
       $result = db_query($query, $title, $noderestrict);
-    } else { // no restriction, query is fine, but db_query doesn't need the extra argument
+    }
+    else { // no restriction, query is fine, but db_query doesn't need the extra argument
       $result = db_query($query, $title);
     }
 // FIXME ***
@@ -96,7 +97,8 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
           $phrase = substr($wikiword, 2, -2);
           $pattern = '/\[\[' . $phrase . ']]/';
           $replacement = l($phrase, 'freelinking/' . urlencode($phrase));
-        } else { // it's a CamelCase, expressions are a bit simpler
+        }
+        else { // it's a CamelCase, expressions are a bit simpler
           $pattern = '/\b' . $wikiword . '\b/';
           $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
         }
