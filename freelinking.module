@@ -1,0 +1,115 @@
+<?php
+/* freelinking.module -- implements CamelCase and [[free links]] filter for Drupal
+   ea. Farris <eafarris@gmail.com>
+   portions based on code from crw: http://ninjafish.org/project/wiki
+   built for Drupal HEAD pre 4.6
+
+   $Id$
+*/
+
+function freelinking_menu($may_cache) {
+  global $user;
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array( 'path' => 'freelinking', 
+                      'title' => t('freelinking filter'),
+                      'access' => user_access('access content'),
+                      'callback' => 'freelinking_page',
+                      'type' => MENU_CALLBACK
+                    );
+  }
+  return $items;
+} // endfunction freelinking_menu
+
+function freelinking_help($section) {
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Enables freelinking between nodes using CamelCase and delmiters (like [[ and ]]).');
+      break;
+  } // endswitch ($section)
+} // endfunction freelinking_help
+
+function freelinking_page($thetitle = NULL) {
+  if ($thetitle) { // find the matching title
+    $title = addslashes(urldecode($thetitle));
+    $query = 'SELECT nid FROM {node} n WHERE title = "%s"';
+    $noderestrict = variable_get('freelinking_restriction', 'none');
+    if ($noderestrict != 'none') { // need to add to the where clause
+      $query .= ' AND type = "%s"';
+      $result = db_query($query, $title, $noderestrict);
+    } else { // no restriction, query is fine, but db_query doesn't need the extra argument
+      $result = db_query($query, $title);
+    }
+// FIXME ***
+    while ($node = db_fetch_object($result)) { // only one, I hope... what if there's more than one?
+      $nid = $node->nid;
+    }
+    if (empty($nid)) { // the node doesn't exist, set the path to create it
+      $nodetype = variable_get('freelinking_nodetype', 'wiki');
+      $delimiter = variable_get('clean_url', 0) ? '?' : '&';
+      $path = 'node/add/' . $nodetype . $delimiter . "edit[title]=$thetitle";
+    }
+    else { // else the node does exist, set the path to go there
+      $path = 'node/' . $nid;
+    }
+  }
+// FIXME ***
+  else { // no title was passed, what do we do?
+  }
+  drupal_goto($path);
+} // endfunction freelinking_page
+
+function freelinking_settings() {
+  $restrictoptions['none'] = t('No restrictions');
+  foreach (node_list() as $nodetype) {
+    $newnodeoptions[$nodetype] = $nodetype;
+    $restrictoptions[$nodetype] = $nodetype;
+  }
+  $output .= form_select(t('Default for new nodes'), 'freelinking_nodetype', variable_get('freelinking_nodetype', 'blog'), $newnodeoptions, t('Type of node that the freelinking filter will create when clicking on a freelink without a target.'));
+  $output .= form_select(t('Restrict free links to this node type'), 'freelinking_restriction', variable_get('freelinking_restriction','none'), $restrictoptions, t('If desired, you can restrict the freelinking title search to just nodes of this type. Note that if it is not the same as the default node type, above, new freelinked content cannot be found.'));
+// FIXME ***
+  //$output .= form_checkbox(t('Restrict free links targets to same author'), 'freelinking_authoronly', true, variable_get('freelinking_authoronly', false), t('When this option is checked, the freelinking title search will use the author of the current node to restrict the search to other nodes by the same author. In practice, checking this box and setting the above options to "blog" turns each user\'s blog into separate wikis, that is, freelinks will not cross from one user\'s blog to another.'));
+
+  return $output;
+} // endfunction freelinking_settings
+
+function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
+  switch ($op) {
+    case 'list':
+      return (array(0 => t('freelinking filter')));
+      break;
+
+    case 'name':
+      return t('freelinking filter');
+      break;
+
+    case 'process':
+// FIXME ***
+      $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
+      preg_match_all($camelcaseregexp, $text, $ccmatches);
+      $freelinkingregexp = '/\[\[.+]]/U'; // this finds [[links like this]], un-greedily
+      preg_match_all($freelinkingregexp, $text, $flmatches);
+      $wikiwords = array_merge($ccmatches[0], $flmatches[0]);
+      foreach (array_unique($wikiwords) as $wikiword) {
+        if (substr($wikiword, 0, 2) == '[[') { // if it's a freelink, the expressions are different
+          $phrase = substr($wikiword, 2, -2);
+          $pattern = '/\[\[' . $phrase . ']]/';
+          $replacement = l($phrase, 'freelinking/' . urlencode($phrase));
+        } else { // it's a CamelCase, expressions are a bit simpler
+          $pattern = '/\b' . $wikiword . '\b/';
+          $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
+        }
+        $text = preg_replace($pattern, $replacement, $text);
+      }
+      return $text;
+      break;
+
+    case 'prepare':
+      return $text;
+      break;
+
+  } // endswitch $op
+} // endfunction freelinking_filter
+
+// vim: tw=300 nowrap syn=php
