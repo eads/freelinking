@@ -13,10 +13,9 @@ function freelinking_menu($may_cache) {
 
   if ($may_cache) {
     $items[] = array( 'path' => 'freelinking', 
-                      'title' => t('freelinking filter'),
+                      'title' => t('freelinks'),
                       'access' => user_access('access content'),
-                      'callback' => 'freelinking_page',
-                      'type' => MENU_CALLBACK
+                      'callback' => 'freelinking_page'
                     );
   }
   return $items;
@@ -25,40 +24,27 @@ function freelinking_menu($may_cache) {
 function freelinking_help($section) {
   switch ($section) {
     case 'admin/modules#description':
-      return t('Enables freelinking between nodes using CamelCase and delmiters (like [[ and ]]).');
+      return t('Enables freelinking between nodes using CamelCase and delimiters (like [[ and ]]).');
       break;
   } // endswitch ($section)
 } // endfunction freelinking_help
 
 function freelinking_page($thetitle = NULL) {
   if ($thetitle) { // find the matching title
-    $title = addslashes(urldecode($thetitle));
-    $query = 'SELECT nid FROM {node} n WHERE title = "%s"';
-    $noderestrict = variable_get('freelinking_restriction', 'none');
-    if ($noderestrict != 'none') { // need to add to the where clause
-      $query .= ' AND type = "%s"';
-      $result = db_query($query, $title, $noderestrict);
-    }
-    else { // no restriction, query is fine, but db_query doesn't need the extra argument
-      $result = db_query($query, $title);
-    }
-// FIXME ***
-    while ($node = db_fetch_object($result)) { // only one, I hope... what if there's more than one?
-      $nid = $node->nid;
-    }
-    if (empty($nid)) { // the node doesn't exist, set the path to create it
-      $nodetype = variable_get('freelinking_nodetype', 'wiki');
-      $delimiter = variable_get('clean_url', 0) ? '?' : '&';
-      $path = 'node/add/' . $nodetype . $delimiter . "edit[title]=$thetitle";
-    }
-    else { // else the node does exist, set the path to go there
-      $path = 'node/' . $nid;
-    }
+    drupal_goto(_freelinking_make_link($thetitle));
   }
-// FIXME ***
-  else { // no title was passed, what do we do?
+  else { // no title was passed -- show a list of wikiwords and status
+    $header = array('phrase', 'status');
+    $query = 'SELECT * FROM {freelinking} ORDER BY phrase';
+    $result = db_query($query);
+    while ($wikipair = db_fetch_object($result)) { // looping through phrase, target pairs
+      $rows[] = array($wikipair->phrase, l(_freelinking_exists($wikipair->phrase) ? t('view this content') : t('create this content'), _freelinking_make_link($wikipair->phrase)));
+    }
+    print theme('header');
+    print theme('page', theme('table', $header, $rows));
+    print theme('footer');
+
   }
-  drupal_goto($path);
 } // endfunction freelinking_page
 
 function freelinking_settings() {
@@ -71,6 +57,13 @@ function freelinking_settings() {
   $output .= form_select(t('Restrict free links to this node type'), 'freelinking_restriction', variable_get('freelinking_restriction','none'), $restrictoptions, t('If desired, you can restrict the freelinking title search to just nodes of this type. Note that if it is not the same as the default node type, above, new freelinked content cannot be found.'));
 // FIXME ***
   //$output .= form_checkbox(t('Restrict free links targets to same author'), 'freelinking_authoronly', true, variable_get('freelinking_authoronly', false), t('When this option is checked, the freelinking title search will use the author of the current node to restrict the search to other nodes by the same author. In practice, checking this box and setting the above options to "blog" turns each user\'s blog into separate wikis, that is, freelinks will not cross from one user\'s blog to another.'));
+
+  $group = form_textfield(t('Title of freelinks block'), freelinking_blocktitle, variable_get('freelinking_blocktitle', 'Create This Content'), 30, 60, t('Title of the block that shows freelinked phrases without content.'));
+  for ($i = 5; $i <=30; $i=$i+5) {
+    $options[$i] = $i;
+  }
+  $group .= form_select(t('Number of non-existing link phrases to show'), freelinking_blocknum, variable_get('freelinking_blocknum', '10'), $options, t('Number of phrases to show in the block.'));
+  $output .= form_group(t('Freelinks Block Options'), $group);
 
   return $output;
 } // endfunction freelinking_settings
@@ -100,9 +93,15 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
         }
         else { // it's a CamelCase, expressions are a bit simpler
           $pattern = '/\b' . $wikiword . '\b/';
+          $phrase = $wikiword; // consistency for the db
           $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
         }
         $text = preg_replace($pattern, $replacement, $text);
+        $query = 'SELECT phrase FROM {freelinking} WHERE phrase = "%s"';
+        if ( !db_num_rows(db_query($query, $phrase))) { // not in the db
+          $query = 'INSERT INTO {freelinking} (phrase) VALUES ("%s")';
+          $result = db_query($query, $phrase);
+        } // endif row not found in table
       }
       return $text;
       break;
@@ -113,5 +112,46 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
 
   } // endswitch $op
 } // endfunction freelinking_filter
+
+function _freelinking_exists($thetitle) { // helper function for freelinking_page
+  // looks through the db for nodes matching $title. Returns the nid if such a node exists, otherwise, returns 0
+  $title = addslashes(urldecode($thetitle));
+  $query = 'SELECT nid FROM {node} WHERE title = "%s"';
+  $noderestrict = variable_get('freelinking_restriction', 'none');
+  if ($noderestrict != 'none') { // need to add the where clause
+    $query .= ' AND type = "%s"';
+    $result = db_query($query, $title, $noderestrict);
+  }
+  else { // no restriction. query is fine but db_query doesn't need the extra argument
+    $result = db_query($query, $title);
+  }
+// FIXME ***
+  while ($node = db_fetch_object($result)) { // only one, I hope... what if there's more than one?
+    $nid = $node->nid;
+  }
+  return (empty($nid) ? 0 : $nid);
+}
+
+
+function _freelinking_make_link($thetitle) { // helper function for freelinking_page
+  // Returns a link to a node named $thetitle if found, or a link to new content otherwise.
+  $nid = _freelinking_exists($thetitle); 
+  if ($nid) { // the node exists, set the path to go there
+    $path = 'node/' . $nid;
+  }
+  else { // node doesn't exist, set path to create it
+    $path = _freelinking_create_new_link($thetitle);
+  }
+
+  return $path;
+} // endfunction _freelinking_make_link
+
+function _freelinking_create_new_link($thetitle) { // helper function for _freelinking_make_link
+// returns a link to creating new content with $thetitle as the title.
+// this is separate from _f_make_link so it can be called on its own without needing to hit the db twice.
+  $nodetype = variable_get('freelinking_nodetype', 'wiki');
+  $delmiter = variable_get('clean_url', 0) ? '?' : '&';
+  return 'node/add/' . $nodetype . $delmiter . "edit[title]=$thetitle";
+} // endfunction _freelinking_create_new_link
 
 // vim: tw=300 nowrap syn=php

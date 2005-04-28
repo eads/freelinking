@@ -42,18 +42,32 @@ options:
 
 Other options planned, but not yet implemented, include:
 
-- Flexible delimiters for phrases. Double-square brackets are going to
-  be used to link to the [wikipedia] [3], so this filter should give
-  some choice as to what will be used as the freelinking delimiters.
+- Flexible delimiters for phrases. Double-square brackets are used by
+  the interwiki.module [3], so this filter should give some choice as to
+  what will be used as the freelinking delimiters.
 - Restrict freelinking to nodes created by the same user. For example,
   Author1 writing a blog entry with freelinks should expect his links to
   resolve to other content by him, and not just any content on the site.
   This would give multi-authored sites into several private wikis, each
   linking only to his or her own content.
 
+## "freelinks" menu option
+
+When the freelinking.module is activated, a "freelinks" menu choice
+appears on the navigation menu. Clicking this brings up a page showing
+all the freelinks currently indexed in the Drupal site, along with a
+link to either "view this content" or "create this content." With this
+page, users can find content that is the target of a link, but doesn't
+yet exist, "filling in the gaps," so to speak. This feature came about
+because of a feature request at http://drupal.org/node/20405 .
+
 ---
 References
 
 [1] : mailto:eafarris@gmail.com
 [2] : http://ninjafish.org/project/wiki
-[3] : http://www.wikipedia.net
+[3] : http://drupal.org/project/interwiki
+
+---
+freelinking.module by ea.Farris <eafarris@gmail.com>
+$Id$

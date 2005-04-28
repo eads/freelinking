@@ -1,0 +1,25 @@
+# CHANGELOG.txt for freelinking.module
+
+version ????
+---
+development version.
+
+* implemented a database table that keeps a record of freelinking
+  phrases. When freelinking_page() is called without an argument
+  (http://drupalsite.com/freelinking/) a list of freelinking phrases are
+  given, along with their status, either "create this content" or a link
+  to the content. This could be used to encourage users to create
+  content that is a target of a link, but doesn't yet exist.
+
+version 1.2
+---
+initial public release.
+
+Evolved from ninjafishwiki.module, and dwiki.module before that. 
+removed wiki nodetype. This is more appropriately handled by flexinode,
+or by reusing a core node type like blog or story.
+
+---
+freelinking.module by ea.Farris <eafarris@gmail.com>
+$Id$
+
