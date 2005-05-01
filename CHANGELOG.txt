@@ -1,9 +1,21 @@
 # CHANGELOG.txt for freelinking.module
 
-version ????
+version 1.4
 ---
-development version.
+* applied a modified version of a patch by Wes Cowley
+  (http://drupal.org/node/21433) that implements a syntax similar to
+  4.5's title.module. Thanks, Wes! That should fix the feature noted
+  above.  This does (slightly) break the freelinking page, since links
+  can be to outside URLs, and can also be to a different target than the
+  source text. I'm working on this.
 
+* you can optionally turn off CamelCase. This is also part of Wes's
+  patch.
+
+* implemented filter tips. That should fix http://drupal.org/node/21434
+
+version 1.3
+---
 * implemented a database table that keeps a record of freelinking
   phrases. When freelinking_page() is called without an argument
   (http://drupalsite.com/freelinking/) a list of freelinking phrases are

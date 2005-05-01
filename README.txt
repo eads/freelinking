@@ -19,6 +19,19 @@ clickable to a node with the words as the title. If no node so titled
 exists, the link will attempt to create the node and present the user
 with the node creation form, with the title already filled in.
 
+In addition to these simple linking styles, freelinking.module also
+supports an expanded syntax using the double-square bracket method.
+Freelinks containing a bar (or pipe, '|') will link different text to
+the target. For example, [[this is what's shown|this is the target]]
+will link the text "this is what's shown" to content titled "this is the
+target," or, if that doesn't exist, the create content page will be
+shown with "this is the target" as the title.
+
+Freelinks within double-square brackets can also contain URLs that begin
+with http://. So links like this [[Drupal Web Site|http://www.drupal.org]]
+are acceptable, as is [[http://www.drupal.org]], which will show the URL
+in the body and link it.
+
 ## Installation and activation
 
 For installation instrutions, and for information on how to activate
@@ -39,6 +52,9 @@ options:
   freelinking-created content won't ever be found. Defaults to 'no
   restrictions,' meaning all content types are eligible to be the target
   of a freelink.
+
+- If you don't want to turn CamelCase words into links, you can turn
+  that off. It defaults to on.
 
 Other options planned, but not yet implemented, include:
 
