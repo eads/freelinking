@@ -80,13 +80,11 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
     case 'process':
 // FIXME ***
       $allowcamelcase = variable_get('freelinking_camelcase', TRUE);
-      if ($allowcamelcase) {
-         $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
-         preg_match_all($camelcaseregexp, $text, $ccmatches);
-      }
       $freelinkingregexp = '/\[\[.+]]/U'; // this finds [[links like this]], un-greedily
       preg_match_all($freelinkingregexp, $text, $flmatches);
       if ($allowcamelcase) {
+         $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
+         preg_match_all($camelcaseregexp, $text, $ccmatches);
          $wikiwords = array_merge($ccmatches[0], $flmatches[0]);
       }
       else {
@@ -102,7 +100,7 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
              $phrase = substr($phrase, 0, $barpos);
              $freelink = substr($freelink, $barpos + 1);
           }
-          if (substr($freelink,0,7) == 'http://') {
+          if (preg_match('/^(http|mailto|https|ftp):/', $freelink)) {
              $replacement = '<a href="' . $freelink . '">' . $phrase . '</a>';
           }
           else {
