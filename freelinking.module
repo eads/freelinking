@@ -144,7 +144,8 @@ function freelinking_filter_tips($delta, $format, $long = FALSE) {
     if (variable_get('freelinking_camelcase', TRUE)) {
       $output .= 'Content consisting of two or more capitalized words run together (aka "CamelCase") will be linked to existing content with that title, or a page to create that content.';
     }
-  } else { // short tips displayed in-line
+  }
+  else { // short tips displayed in-line
     $output  = 'Link to content with [[some text]], where "some text" is the title of existing content or the title of a new piece of content to create. You can also link text to a different title by using [[show this text|link to this title]]. ';
     $output .= 'Link to outside URLs with [[some text|http://www.example.com]], or even [[http://www.example.com]]. ';
     if (variable_get('freelinking_camelcase', TRUE)) {
