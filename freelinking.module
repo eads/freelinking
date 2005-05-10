@@ -166,7 +166,7 @@ function freelinking_filter_tips($delta, $format, $long = FALSE) {
 
 function _freelinking_exists($thetitle) { // helper function for freelinking_page
   // looks through the db for nodes matching $title. Returns the nid if such a node exists, otherwise, returns 0
-  $title = addslashes(urldecode($thetitle));
+  $title = urldecode($thetitle);
   $query = "SELECT nid FROM {node} WHERE title = '%s'";
   $noderestrict = variable_get('freelinking_restriction', 'none');
   if ($noderestrict != 'none') { // need to add the where clause
