@@ -97,8 +97,8 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
           $barpos = strpos($phrase, '|');
           $pattern = '/\[\[' . preg_quote($phrase,'/') . ']]/';
           if ($barpos) {
-             $phrase = substr($phrase, 0, $barpos);
-             $freelink = substr($freelink, $barpos + 1);
+             $freelink = substr($freelink, 0, $barpos);
+             $phrase = substr($phrase, $barpos + 1);
           }
           if (preg_match('/^(http|mailto|https|ftp):/', $freelink)) {
              $replacement = '<a href="' . $freelink . '">' . $phrase . '</a>';
@@ -132,13 +132,13 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
 function freelinking_filter_tips($delta, $format, $long = FALSE) {
   if ($long) {
     $output  = 'Content in [[double square brackets]] will be linked to existing content with that title, or a page to create that content. ';
-    $output .= 'Links can contain an optional bar, "|". Content on the left of the bar is the link shown; to the right, the target content. ';
-    $output .= 'Links to pages outside this site are allowed. They must start with "http://", and can exist either by themselves, or on the left of the bar. ';
+    $output .= 'Links can contain an optional bar, "|". Content on the left of the bar is the target; to the right, the link shown. ';
+    $output .= 'Links to pages outside this site are allowed. They must start with one of the following: "http", "https", "ftp", or "mailto", and can exist either by themselves, or on the left of the bar. ';
     $output .= 'Examples: ';
     $ouptut .= '<ul>';
     $output .= '<li>[[simple link]] - will go to the content titled "simple link" or a page to create that content.</li>';
-    $output .= '<li>[[this is the source|this is the target]] - will present "this is the source" as a link to "this is the target", or a page to create that content.</li>';
-    $output .= '<li>[[this is the source|http://www.example.com]] - will present "this is the source" as a link to http://www.example.com.</li>';
+    $output .= '<li>[[this is the target|this is the source]] - will present "this is the source" as a link to "this is the target", or a page to create that content.</li>';
+    $output .= '<li>[[http://www.example.com|this is the source]] - will present "this is the source" as a link to http://www.example.com.</li>';
     $output .= '<li>[[http://www.example.com]] - will present "http://www.example.com" as a link to http://www.example.com.</li>';
     $output .= '</ul>';
     if (variable_get('freelinking_camelcase', TRUE)) {
@@ -146,8 +146,8 @@ function freelinking_filter_tips($delta, $format, $long = FALSE) {
     }
   }
   else { // short tips displayed in-line
-    $output  = 'Link to content with [[some text]], where "some text" is the title of existing content or the title of a new piece of content to create. You can also link text to a different title by using [[show this text|link to this title]]. ';
-    $output .= 'Link to outside URLs with [[some text|http://www.example.com]], or even [[http://www.example.com]]. ';
+    $output  = 'Link to content with [[some text]], where "some text" is the title of existing content or the title of a new piece of content to create. You can also link text to a different title by using [[link to this title|show this text]]. ';
+    $output .= 'Link to outside URLs with [[http://www.example.com|some text]], or even [[http://www.example.com]]. ';
     if (variable_get('freelinking_camelcase', TRUE)) {
       $output .= 'Link to existing or new content with CamelCaseWords.';
     }
