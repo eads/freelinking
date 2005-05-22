@@ -34,11 +34,20 @@ function freelinking_page($thetitle = NULL) {
     drupal_goto(_freelinking_make_link($thetitle));
   }
   else { // no title was passed -- show a list of wikiwords and status
-    $header = array('phrase', 'status');
+    $header = array('phrase', 'target');
     $query = "SELECT * FROM {freelinking} ORDER BY phrase";
     $result = db_query($query);
-    while ($wikipair = db_fetch_object($result)) { // looping through phrase, target pairs
-      $rows[] = array($wikipair->phrase, l(_freelinking_exists($wikipair->phrase) ? t('view this content') : t('create this content'), _freelinking_make_link($wikipair->phrase)));
+    $i = 0;
+    while ($flpair = db_fetch_object($result)) { // looping through phrase, target pairs
+      $rows[$i][] = $flpair->phrase;
+      if (preg_match('/^(http|mailto|https|ftp):/', $flpair->target)) { // an absolute link
+        $rows[$i][] = '<a href="' . $flpair->target . '">' . $flpair->target . '</a>';
+      }
+      else { // a freelink
+        $fltargetnid = _freelinking_exists($flpair->target);
+        $rows[$i][] = l($fltargetnid ? 'node/' . $fltargetnid : t('create this content') , _freelinking_make_link($flpair->target));
+      }
+      $i++;
     }
     print theme('header');
     print theme('page', theme('table', $header, $rows));
@@ -66,6 +75,45 @@ function freelinking_settings() {
 
   return $output;
 } // endfunction freelinking_settings
+
+function freelinking_block($op = 'list', $delta = 0) {
+  switch ($op) {
+    case 'list':
+      $blocks[0]['info'] = t('Freelink targets that need to be created');
+      return $blocks;
+      break;
+    case 'view':
+      switch ($delta) {
+        case 0:
+          $query = 'SELECT * FROM {freelinking} ORDER BY RAND()';
+          $result = db_query($query);
+          $i = 0;
+          $content = '';
+          while ($flpair = db_fetch_object($result)) {
+            if ($i == variable_get('freelinking_blocknum', 10)) { // we're done
+              break;
+            }
+            if (preg_match('/^(http|mailto|https|ftp):/', $flpair->target)) { // an absolute link
+              continue; // on to the next record
+            }
+            if (_freelinking_exists($flpair->target)) { // a freelink, but it exists
+              continue; // nope, can't use you either
+            }
+            // if we've made it this far, we've got a freelink that needs to be created.
+            $content .= '<li>' . l($flpair->phrase, _freelinking_make_link($flpair->target)) . "\n";
+            $i++;
+          } // endwhile looping through flpairs
+          $block['subject'] = variable_get('freelinking_blocktitle', 'Create This Content');
+          $block['content'] = '<ul>' . $content . '</ul>' . "\n";
+          return $block;
+        default:
+          break;
+      } // endswitch $delta
+    default:
+      break;
+  } // endswitch $op
+} // endfunction freelinking_block
+
 
 function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
   switch ($op) {
@@ -110,13 +158,14 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
         else if ($allowcamelcase) { // it's a CamelCase, expressions are a bit simpler
           $pattern = '/\b' . $wikiword . '\b/';
           $phrase = $wikiword; // consistency for the db
+          $freelink = $wikiword; // also for the db
           $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
         }
         $text = preg_replace($pattern, $replacement, $text);
-        $query = "SELECT phrase FROM {freelinking} WHERE phrase = '%s'";
-        if ( !db_num_rows(db_query($query, $phrase))) { // not in the db
-          $query = "INSERT INTO {freelinking} (phrase) VALUES ('%s')";
-          $result = db_query($query, $phrase);
+        $query = "SELECT phrase, target FROM {freelinking} WHERE phrase = '%s' AND target = '%s'";
+        if ( !db_num_rows(db_query($query, $phrase, $freelink))) { // not in the db
+          $query = "INSERT INTO {freelinking} (phrase, target) VALUES ('%s', '%s')";
+          $result = db_query($query, $phrase, $freelink);
         } // endif row not found in table
       } // foreach wikiword
       return $text;
