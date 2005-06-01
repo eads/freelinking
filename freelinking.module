@@ -59,8 +59,8 @@ function freelinking_page($thetitle = NULL) {
 function freelinking_settings() {
   $restrictoptions['none'] = t('No restrictions');
   foreach (node_list() as $nodetype) {
-    $newnodeoptions[$nodetype] = $nodetype;
-    $restrictoptions[$nodetype] = $nodetype;
+    $newnodeoptions[$nodetype] = node_invoke($nodetype, 'node_name');
+    $restrictoptions[$nodetype] = node_invoke($nodetype, 'node_name');
   }
   $output .= form_select(t('Default for new nodes'), 'freelinking_nodetype', variable_get('freelinking_nodetype', 'blog'), $newnodeoptions, t('Type of node that the freelinking filter will create when clicking on a freelink without a target.'));
   $output .= form_select(t('Restrict free links to this node type'), 'freelinking_restriction', variable_get('freelinking_restriction','none'), $restrictoptions, t('If desired, you can restrict the freelinking title search to just nodes of this type. Note that if it is not the same as the default node type, above, new freelinked content cannot be found.'));
