@@ -201,7 +201,7 @@ function freelinking_filter_tips($delta, $format, $long = FALSE) {
       $output .= 'Link to existing or new content with CamelCaseWords.';
     }
   }
-  return $output;
+  return t($output);
 }
 
 
