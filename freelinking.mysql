@@ -1,11 +1,11 @@
 DROP TABLE IF EXISTS freelinking;
 
 CREATE TABLE freelinking (
-  phrase VARCHAR(255) NOT NULL,
-  target VARCHAR(255) NOT NULL,
+  phrase VARCHAR(200) NOT NULL,
+  target VARCHAR(200) NOT NULL,
 
   PRIMARY KEY(phrase,target)
 );
 
-DELETE FROM CACHE;
+DELETE FROM cache;
 
