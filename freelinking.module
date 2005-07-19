@@ -58,7 +58,7 @@ function freelinking_page($thetitle = NULL) {
 
 function freelinking_settings() {
   $restrictoptions['none'] = t('No restrictions');
-  foreach (node_list() as $nodetype) {
+  foreach (node_list() as $nodetype=>$module) {
     $newnodeoptions[$nodetype] = node_invoke($nodetype, 'node_name');
     $restrictoptions[$nodetype] = node_invoke($nodetype, 'node_name');
   }
