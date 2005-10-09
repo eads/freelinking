@@ -2,7 +2,6 @@
 /* freelinking.module -- implements CamelCase and [[free links]] filter for Drupal
    ea. Farris <eafarris@gmail.com>
    portions based on code from crw: http://ninjafish.org/project/wiki
-   built for Drupal HEAD pre 4.6
 
    $Id$
 */
@@ -155,54 +154,7 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
       break;
 
     case 'process':
-// FIXME ***
-      $allowcamelcase = variable_get('freelinking_camelcase', TRUE);
-      $freelinkingregexp = '/\[\[.+]]/U'; // this finds [[links like this]], un-greedily
-      preg_match_all($freelinkingregexp, $text, $flmatches);
-      if ($allowcamelcase) {
-         $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
-         preg_match_all($camelcaseregexp, $text, $ccmatches);
-         $wikiwords = array_merge($ccmatches[0], $flmatches[0]);
-      }
-      else {
-         $wikiwords = $flmatches[0];
-      }
-      foreach (array_unique($wikiwords) as $wikiword) {
-        if (substr($wikiword, 0, 2) == '[[') { // if it's a freelink, the expressions are different
-          $phrase = substr($wikiword, 2, -2);
-          $freelink = $phrase;
-          $barpos = strpos($phrase, '|');
-          $pattern = '/\[\[' . preg_quote($phrase,'/') . ']]/';
-          if ($barpos) {
-             $freelink = substr($freelink, 0, $barpos);
-             $phrase = substr($phrase, $barpos + 1);
-          }
-          if (preg_match('/^(http|mailto|https|ftp):/', $freelink)) {
-             $replacement = '<a href="' . $freelink . '">' . $phrase . '</a>';
-          }
-          else {
-            $replacement = l($phrase, 'freelinking/' . rawurlencode(htmlspecialchars(rawurlencode($freelink))));
-          }
-        }
-
-        else if ($allowcamelcase) { // it's a CamelCase, expressions are a bit simpler
-          $pattern = '/\b' . $wikiword . '\b(?![^<]*>)/';
-          $phrase = $wikiword; // consistency for the db
-          $freelink = $wikiword; // also for the db
-          $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
-        }
-        $text = preg_replace($pattern, $replacement, $text);
-        
-//FIX should only store on node save, not preview.
-        $query = "SELECT phrase, target FROM {freelinking} WHERE phrase = '%s' AND target = '%s'";
-        if ( !db_num_rows(db_query($query, $phrase, $freelink))) { // not in the db
-          $query = "INSERT INTO {freelinking} (phrase, target) VALUES ('%s', '%s')";
-          $result = db_query($query, $phrase, $freelink);
-        } // endif row not found in table
-
-      } // foreach wikiword
-
-      return $text;
+      return _freelinking_do_filtering($text);
       break;
 
     case 'prepare':
@@ -211,6 +163,17 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
 
   } // endswitch $op
 } // endfunction freelinking_filter
+
+function freelinking_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  switch ($op) {
+    case 'update':
+      _freelinking_do_filtering($node->body, TRUE);
+      break;
+    case 'insert':
+      _freelinking_do_filtering($node->body, TRUE);
+      break;
+  } // endswitch $op
+} // endfunction freelinking_nodeapi
 
 function freelinking_filter_tips($delta, $format, $long = FALSE) {
   if ($long) {
@@ -246,6 +209,56 @@ function freelinking_filter_tips($delta, $format, $long = FALSE) {
  * subject to change without notice.
  *
 */
+
+function _freelinking_do_filtering($text, $store = FALSE) {
+  $allowcamelcase = variable_get('freelinking_camelcase', TRUE);
+  $freelinkingregexp = '/\[\[.+]]/U'; // this finds [[links like this]], un-greedily
+  preg_match_all($freelinkingregexp, $text, $flmatches);
+  if ($allowcamelcase) {
+     $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
+     preg_match_all($camelcaseregexp, $text, $ccmatches);
+     $wikiwords = array_merge($ccmatches[0], $flmatches[0]);
+  }
+  else {
+     $wikiwords = $flmatches[0];
+  }
+  foreach (array_unique($wikiwords) as $wikiword) {
+    if (substr($wikiword, 0, 2) == '[[') { // if it's a freelink, the expressions are different
+      $phrase = substr($wikiword, 2, -2);
+      $freelink = $phrase;
+      $barpos = strpos($phrase, '|');
+      $pattern = '/\[\[' . preg_quote($phrase,'/') . ']]/';
+      if ($barpos) {
+         $freelink = substr($freelink, 0, $barpos);
+         $phrase = substr($phrase, $barpos + 1);
+      }
+      if (preg_match('/^(http|mailto|https|ftp):/', $freelink)) {
+         $replacement = '<a href="' . $freelink . '">' . $phrase . '</a>';
+      }
+      else {
+        $replacement = l($phrase, 'freelinking/' . rawurlencode(htmlspecialchars(rawurlencode($freelink))));
+      }
+    }
+
+    else if ($allowcamelcase) { // it's a CamelCase, expressions are a bit simpler
+      $pattern = '/\b' . $wikiword . '\b(?![^<]*>)/';
+      $phrase = $wikiword; // consistency for the db
+      $freelink = $wikiword; // also for the db
+      $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
+    }
+    $text = preg_replace($pattern, $replacement, $text);
+    
+    if ($store) {
+      $query = "SELECT phrase, target FROM {freelinking} WHERE phrase = '%s' AND target = '%s'";
+      if ( !db_num_rows(db_query($query, $phrase, $freelink))) { // not in the db
+        $query = "INSERT INTO {freelinking} (phrase, target) VALUES ('%s', '%s')";
+        $result = db_query($query, $phrase, $freelink);
+      } // endif row not found in table
+    }
+
+  } // foreach wikiword
+  return $text;
+} // endfunction 
 
 function _freelinking_exists($thetitle) { // helper function for freelinking_page
   // looks through the db for nodes matching $title. Returns the nid if such a node exists, otherwise, returns 0
