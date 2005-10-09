@@ -155,7 +155,7 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
         }
 
         else if ($allowcamelcase) { // it's a CamelCase, expressions are a bit simpler
-          $pattern = '/(?![^<]a.*?>)\b' . $wikiword . '\b/';
+          $pattern = '/\b' . $wikiword . '\b(?![^<]*>)/';
           $phrase = $wikiword; // consistency for the db
           $freelink = $wikiword; // also for the db
           $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
