@@ -134,11 +134,11 @@ function freelinking_block($op = 'list', $delta = 0) {
               continue; // nope, can't use you either
             }
             // if we've made it this far, we've got a freelink that needs to be created.
-            $content .= '<li>' . l($flpair->phrase, _freelinking_make_link($flpair->target)) . "\n";
+            $items[] = l($flpair->phrase, _freelinking_make_link($flpair->target));
             $i++;
           } // endwhile looping through flpairs
           $block['subject'] = variable_get('freelinking_blocktitle', 'Create This Content');
-          $block['content'] = '<ul>' . $content . '</ul>' . "\n";
+          $block['content'] = theme('item_list', $items);
           return $block;
         default:
           break;
