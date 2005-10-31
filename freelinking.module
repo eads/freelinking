@@ -303,8 +303,8 @@ function _freelinking_create_new_link($thetitle) { // helper function for _freel
 // returns a link to creating new content with $thetitle as the title.
 // this is separate from _f_make_link so it can be called on its own without needing to hit the db twice.
   $nodetype = variable_get('freelinking_nodetype', 'wiki');
-  $delmiter = variable_get('clean_url', 0) ? '?' : '&';
-  return 'node/add/' . $nodetype . $delmiter . "edit[title]=$thetitle";
+  $delimiter = variable_get('clean_url', 0) ? '?' : '&';
+  return 'node/add/' . $nodetype . $delimiter . "edit[title]=$thetitle";
 } // endfunction _freelinking_create_new_link
 
 // vim: tw=300 nowrap syn=php
