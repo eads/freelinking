@@ -53,69 +53,38 @@ function freelinking_page($thetitle = NULL) {
   }
 } // endfunction freelinking_page
 
-function freelinking_settings() {
-  $restrictoptions['none'] = t('No restrictions');
-  foreach (node_get_types()as $nodetype => $name) {
-    $newnodeoptions[$nodetype] =  node_get_name($nodetype);
-    $restrictoptions[$nodetype] =  node_get_name($nodetype);
-  }
-  $form['freelinking_nodetype'] = array(
-    title => t('Default for new content'),
-    type => 'select',
-    options => $newnodeoptions,
-    default_value => variable_get('freelinking_nodetype', 'blog'),
-    description => t('Type of content that the freelinking filter will create when clicking on a freelink without a target.')
-  );
-  $form['freelinking_restriction'] = array(
-    title => t('Restrict free links to this content type'),
-    type => 'select',
-    options => $restrictoptions,
-    default_value => variable_get('freelinking_restriction', 'none'),
-    description => t('If desired, you can restrict the freelinking title search to just content of this type. Note that if it is not the same as the "Default for new content," above, new freelinked content cannot be found.')
-  );
-  $form['freelinking_camelcase'] = array(
-    title => t('Allow CamelCase linking'),
-    type => 'checkbox',
-    default_value => variable_get('freelinking_camelcase', 1) == 1 ? TRUE : FALSE,
-    description => t('If desired, you can disable CamelCase linking')
-  );
-  $form['freelinking_onceonly'] = array(
-    title => t('Only link first occurance'),
-    type  => 'checkbox',
-    default_value => variable_get('freelinking_onceonly', 0) == 1 ? TRUE : FALSE,
-    description => t('If desired you can only turn the first occurance of a freelink into a link. This can improve the appearance of content that includes a lot of the same CamelCase words.')
-  );
-  $form['freelinking_block_options'] = array(
-    type => 'fieldset',
-    title => t('Freelinking Block Options')
-  );
-  $form['freelinking_block_options']['freelinking_blocktitle'] = array(
-    title => t('Title of freelinks block'),
-    type => 'textfield',
-    default_value => variable_get('freelinking_blocktitle', t('Create This Content')),
-    size => 30,
-    maxlength => 60,
-    description => t('Title of the block that shows freelinked phrases without content.')
-  );
-  for ($i = 5; $i <=30; $i=$i+5) {
-    $options[$i] = $i;
-  }
-  $form['freelinking_block_options']['freelinking_blocknum'] = array(
-    title => t('Number of non-existing link phrases to show'),
-    type => 'select',
-    options => $options,
-    default_value => variable_get('freelinking_blocknum', '10'),
-    description => t('Number of phrases to show in the block.')
-  );
-  return $form;
-} // endfunction freelinking_settings
-
 function freelinking_block($op = 'list', $delta = 0) {
   switch ($op) {
     case 'list':
       $blocks[0]['info'] = t('Freelink targets that need to be created');
       return $blocks;
       break;
+    case 'configure':
+      $form['freelinking_block_options'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Freelinking Block Options')
+      );
+      $form['freelinking_block_options']['freelinking_blocktitle'] = array(
+        '#title' => t('Title of freelinks block'),
+        '#type' => 'textfield',
+        '#default_value' => variable_get('freelinking_blocktitle', t('Create This Content')),
+        '#size' => 30,
+        '#maxlength' => 60,
+        '#description' => t('Title of the block that shows freelinked phrases without content.')
+      );
+      for ($i = 5; $i <=30; $i=$i+5) {
+        $options[$i] = $i;
+      }
+      $form['freelinking_block_options']['freelinking_blocknum'] = array(
+        '#title' => t('Number of non-existing link phrases to show'),
+        '#type' => 'select',
+        '#options' => $options,
+        '#default_value' => variable_get('freelinking_blocknum', '10'),
+        '#description' => t('Number of phrases to show in the block.')
+      );
+      return $form;
+      break;
+      
     case 'view':
       switch ($delta) {
         case 0:
@@ -157,6 +126,45 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
 
     case 'name':
       return t('freelinking filter');
+      break;
+    
+    case 'description':
+      return t('Enables freelinking between nodes with CamelCase or delimiters like [[ and ]].');
+      break;
+
+    case 'settings':
+      $restrictoptions['none'] = t('No restrictions');
+      foreach (node_get_types()as $nodetype => $name) {
+        $newnodeoptions[$nodetype] =  node_get_name($nodetype);
+        $restrictoptions[$nodetype] =  node_get_name($nodetype);
+      }
+      $form["freelinking_nodetype_$format"] = array(
+        '#title' => t('Default for new content'),
+        '#type' => 'select',
+        '#options' => $newnodeoptions,
+        '#default_value' => variable_get("freelinking_nodetype_$format", 'blog'),
+        '#description' => t('Type of content that the freelinking filter will create when clicking on a freelink without a target.')
+      );
+      $form["freelinking_restriction_$format"] = array(
+        '#title' => t('Restrict free links to this content type'),
+        '#type' => 'select',
+        '#options' => $restrictoptions,
+        '#default_value' => variable_get("freelinking_restriction_$format", 'none'),
+        '#description' => t('If desired, you can restrict the freelinking title search to just content of this type. Note that if it is not the same as the "Default for new content," above, new freelinked content cannot be found.')
+      );
+      $form["freelinking_camelcase_$format"] = array(
+        '#title' => t('Allow CamelCase linking'),
+        '#type' => 'checkbox',
+        '#default_value' => variable_get("freelinking_camelcase_$format", 1) == 1 ? TRUE : FALSE,
+        '#description' => t('If desired, you can disable CamelCase linking')
+      );
+      $form["freelinking_onceonly_$format"] = array(
+        '#title' => t('Only link first occurance'),
+        '#type'  => 'checkbox',
+        '#default_value' => variable_get("freelinking_onceonly_$format", 0) == 1 ? TRUE : FALSE,
+        '#description' => t('If desired you can only turn the first occurance of a freelink into a link. This can improve the appearance of content that includes a lot of the same CamelCase words.')
+      );
+      return $form;
       break;
 
     case 'process':
