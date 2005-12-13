@@ -43,8 +43,8 @@ function freelinking_page($thetitle = NULL) {
         $rows[$i][] = '<a href="' . $flpair->target . '">' . $flpair->target . '</a>';
       }
       else { // a freelink
-        $fltargetnid = _freelinking_exists($flpair->target);
-        $rows[$i][] = l($fltargetnid ? 'node/' . $fltargetnid : t('create this content') , _freelinking_make_link($flpair->target));
+        $fltargetnid = _freelinking_exists($flpair->phrase);
+        $rows[$i][] = l($fltargetnid ? 'node/' . $fltargetnid : t('create this content') , _freelinking_make_link($flpair->phrase));
       }
       $i++;
     }
@@ -88,7 +88,7 @@ function freelinking_block($op = 'list', $delta = 0) {
     case 'view':
       switch ($delta) {
         case 0:
-          $query = 'SELECT * FROM {freelinking} ORDER BY RAND()';
+          $query = 'SELECT * FROM {freelinking} WHERE target LIKE "%node/add%" ORDER BY RAND()';
           $result = db_query($query);
           $i = 0;
           $content = '';
@@ -96,14 +96,7 @@ function freelinking_block($op = 'list', $delta = 0) {
             if ($i == variable_get('freelinking_blocknum', 10)) { // we're done
               break;
             }
-            if (preg_match('/^(http|mailto|https|ftp):/', $flpair->target)) { // an absolute link
-              continue; // on to the next record
-            }
-            if (_freelinking_exists($flpair->target)) { // a freelink, but it exists
-              continue; // nope, can't use you either
-            }
-            // if we've made it this far, we've got a freelink that needs to be created.
-            $items[] = l($flpair->phrase, _freelinking_make_link($flpair->target));
+            $items[] = l($flpair->phrase, $flpair->target);
             $i++;
           } // endwhile looping through flpairs
           $block['subject'] = variable_get('freelinking_blocktitle', 'Create This Content');
@@ -264,16 +257,19 @@ function _freelinking_do_filtering($text, $store = FALSE) {
     $text = preg_replace($pattern, $replacement, $text, variable_get("freelinking_onceonly", 0) ? 1 : -1);
     
     if ($store) {
-      $query = "SELECT phrase, target FROM {freelinking} WHERE phrase = '%s' AND target = '%s'";
-      if ( !db_num_rows(db_query($query, $phrase, $freelink))) { // not in the db
-        $query = "INSERT INTO {freelinking} (phrase, target) VALUES ('%s', '%s')";
-        $result = db_query($query, $phrase, $freelink);
-      } // endif row not found in table
+      _freelinking_store($phrase, $target);
     }
-
   } // foreach wikiword
   return $text;
 } // endfunction _freelinking_do_filtering
+
+function _freelinking_store($phrase, $freelink) { // store freelinking pair in the db
+  $query = "SELECT phrase, target FROM {freelinking} WHERE phrase = '%s' AND target = '%s'";
+  if ( !db_num_rows(db_query($query, $phrase, $freelink))) { // not in the db
+    $query = "INSERT INTO {freelinking} (phrase, target) VALUES ('%s', '%s')";
+    $result = db_query($query, $phrase, $freelink);
+  } // endif row not found in table
+} // endfunction _freelinking_store
 
 function _freelinking_exists($thetitle) { // helper function for freelinking_page
   // looks through the db for nodes matching $title. Returns the nid if such a node exists, otherwise, returns 0
@@ -304,7 +300,7 @@ function _freelinking_make_link($thetitle) { // helper function for freelinking_
   else { // node doesn't exist, set path to create it
     $path = _freelinking_create_new_link($thetitle);
   }
-
+  _freelinking_store($thetitle, $path);
   return $path;
 } // endfunction _freelinking_make_link
 
