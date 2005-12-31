@@ -3,6 +3,8 @@
    ea. Farris <eafarris@gmail.com>
    portions based on code from crw: http://ninjafish.org/project/wiki
 
+   Drupal freelinking project: http://www.drupal.org/project/freelinking
+
    $Id$
 */
 
@@ -30,7 +32,8 @@ function freelinking_help($section) {
 
 function freelinking_page($thetitle = NULL) {
   if ($thetitle) { // find the matching title
-    drupal_goto(_freelinking_make_link($thetitle));
+    $freelink = _freelinking_make_link($thetitle);
+    drupal_goto($freelink['path'], $freelink['args'] ? $freelink['args'] : '');
   }
   else { // no title was passed -- show a list of wikiwords and status
     $header = array('phrase', 'target');
@@ -38,13 +41,20 @@ function freelinking_page($thetitle = NULL) {
     $result = db_query($query);
     $i = 0;
     while ($flpair = db_fetch_object($result)) { // looping through phrase, target pairs
-      $rows[$i][] = $flpair->phrase;
+      $rows[$i][] = urldecode($flpair->phrase);
       if (preg_match('/^(http|mailto|https|ftp):/', $flpair->target)) { // an absolute link
         $rows[$i][] = '<a href="' . $flpair->target . '">' . $flpair->target . '</a>';
       }
       else { // a freelink
         $fltargetnid = _freelinking_exists($flpair->phrase);
-        $rows[$i][] = l($fltargetnid ? 'node/' . $fltargetnid : t('create this content') , _freelinking_make_link($flpair->phrase));
+        $freelink = _freelinking_make_link($flpair->phrase);
+        if ($fltargetnid) {
+          $link = l(t('see this content'), drupal_get_path_alias('node/' . $fltargetnid));
+        }
+        else { // content not found, show link to create
+          $link = '<a href=' . url($freelink['path'], $freelink['args']) . '>' . t('create this content') . '</a>';
+        }
+        $rows[$i][] = $link;
       }
       $i++;
     }
@@ -295,13 +305,14 @@ function _freelinking_make_link($thetitle) { // helper function for freelinking_
   // Returns a link to a node named $thetitle if found, or a link to new content otherwise.
   $nid = _freelinking_exists($thetitle); 
   if ($nid) { // the node exists, set the path to go there
-    $path = 'node/' . $nid;
+    $freelink['path'] = 'node/' . $nid;
   }
   else { // node doesn't exist, set path to create it
-    $path = _freelinking_create_new_link($thetitle);
+    $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'wiki');
+    $freelink['args'] = 'edit[title]=' . $thetitle;
   }
   _freelinking_store($thetitle, $path);
-  return $path;
+  return $freelink;
 } // endfunction _freelinking_make_link
 
 function _freelinking_create_new_link($thetitle) { // helper function for _freelinking_make_link
