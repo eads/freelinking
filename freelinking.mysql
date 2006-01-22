@@ -1,9 +1,10 @@
 CREATE TABLE freelinking (
+  hash   CHAR(32)     NOT NULL,
   phrase VARCHAR(200) NOT NULL,
-  target VARCHAR(200) NOT NULL,
+  path   VARCHAR(200) NOT NULL,
+  args   VARCHAR(200) NOT NULL,
 
-  PRIMARY KEY(phrase,target)
-);
+  PRIMARY KEY(hash)
+) TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;
 
-DELETE FROM cache;
 

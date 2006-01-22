@@ -37,17 +37,17 @@ function freelinking_page($thetitle = NULL) {
   }
   else { // no title was passed -- show a list of wikiwords and status
     $header = array('phrase', 'target');
-    $query = "SELECT * FROM {freelinking} ORDER BY phrase";
+    $query = "SELECT phrase, path FROM {freelinking} ORDER BY phrase";
     $result = db_query($query);
     $i = 0;
-    while ($flpair = db_fetch_object($result)) { // looping through phrase, target pairs
-      $rows[$i][] = urldecode($flpair->phrase);
-      if (preg_match('/^(http|mailto|https|ftp):/', $flpair->target)) { // an absolute link
-        $rows[$i][] = '<a href="' . $flpair->target . '">' . $flpair->target . '</a>';
+    while ($freelink = db_fetch_object($result)) { // looping through phrase, target pairs
+      $rows[$i][] = urldecode($freelink->phrase);
+      if (preg_match('/^(http|mailto|https|ftp):/', $freelink->path)) { // an absolute link
+        $rows[$i][] = '<a class="freelink" href="' . $freelink->path . '">' . $flpair->path . '</a>';
       }
       else { // a freelink
-        $fltargetnid = _freelinking_exists($flpair->phrase);
-        $freelink = _freelinking_make_link($flpair->phrase);
+        $fltargetnid = _freelinking_exists($freelink->phrase);
+        $freelink = _freelinking_make_link($freelink->phrase);
         if ($fltargetnid) {
           $link = l(t('see this content'), drupal_get_path_alias('node/' . $fltargetnid));
         }
@@ -98,15 +98,15 @@ function freelinking_block($op = 'list', $delta = 0) {
     case 'view':
       switch ($delta) {
         case 0:
-          $query = 'SELECT * FROM {freelinking} WHERE target LIKE "%node/add%" ORDER BY RAND()';
+          $query = 'SELECT * FROM {freelinking} WHERE path LIKE "%node/add%" ORDER BY RAND()';
           $result = db_query($query);
           $i = 0;
           $content = '';
-          while ($flpair = db_fetch_object($result)) {
+          while ($freelink = db_fetch_object($result)) {
             if ($i == variable_get('freelinking_blocknum', 10)) { // we're done
               break;
             }
-            $items[] = l($flpair->phrase, $flpair->target);
+            $items[] = l(urldecode($freelink->phrase), $freelink->path, array(), $freelink->args);
             $i++;
           } // endwhile looping through flpairs
           $block['subject'] = variable_get('freelinking_blocktitle', 'Create This Content');
@@ -267,18 +267,27 @@ function _freelinking_do_filtering($text, $store = FALSE) {
     $text = preg_replace($pattern, $replacement, $text, variable_get("freelinking_onceonly", 0) ? 1 : -1);
     
     if ($store) {
-      _freelinking_store($phrase, $target);
+      _freelinking_store($phrase, $replacement);
     }
   } // foreach wikiword
   return $text;
 } // endfunction _freelinking_do_filtering
 
-function _freelinking_store($phrase, $freelink) { // store freelinking pair in the db
-  $query = "SELECT phrase, target FROM {freelinking} WHERE phrase = '%s' AND target = '%s'";
-  if ( !db_num_rows(db_query($query, $phrase, $freelink))) { // not in the db
-    $query = "INSERT INTO {freelinking} (phrase, target) VALUES ('%s', '%s')";
-    $result = db_query($query, $phrase, $freelink);
+function _freelinking_store($phrase, $path, $args=NULL) { // store freelinking pair in the db
+  $hash = md5($phrase . $path . $args);
+  $query = "SELECT hash FROM {freelinking} WHERE phrase = '%s'";
+  $result = db_query($query, $phrase); 
+  if ( !db_num_rows($result)) { // not in the db
+    $query = "INSERT INTO {freelinking} (hash, phrase, path, args) VALUES ('%s', '%s', '%s', '%s')";
+    $result = db_query($query, $hash, $phrase, $path, $args);
   } // endif row not found in table
+  else { // in the db, but does it match?
+    $dbhash = db_fetch_object($result);
+    if ($dbhash->hash != $hash) { // hashes don't match, replace db entry with new values
+      $query = "UPDATE {freelinking} SET hash = '%s', path = '%s', args = '%s' WHERE phrase = '%s'";
+      $result = db_query($query, $hash, $path, $args, $phrase);
+    } // endif hashes don't match
+  } // endifelse row found
 } // endfunction _freelinking_store
 
 function _freelinking_exists($thetitle) { // helper function for freelinking_page
@@ -311,7 +320,7 @@ function _freelinking_make_link($thetitle) { // helper function for freelinking_
     $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'wiki');
     $freelink['args'] = 'edit[title]=' . $thetitle;
   }
-  _freelinking_store($thetitle, $path);
+  _freelinking_store($thetitle, $freelink['path'], $freelink['args']);
   return $freelink;
 } // endfunction _freelinking_make_link
 

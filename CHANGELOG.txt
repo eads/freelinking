@@ -1,5 +1,18 @@
 # CHANGELOG.txt for freelinking.module
 
+version 1.28
+---
+* first version tagged for Drupal 4.7. Problems where duplicate db
+  entries were created should be gone now as a hash is computed and used
+  as a primary key. This should also solve the problems with versions of
+  MySQL earlier than 5.0, where longer primary keys were not allowed.
+  Also added an 'args' column to the table to handle the new url()
+  syntax.
+
+---
+skipped lots of versions; bad bad bad! Must keep up the changelog.
+---
+
 version 1.4
 ---
 * applied a modified version of a patch by Wes Cowley

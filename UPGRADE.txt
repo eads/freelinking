@@ -1,34 +1,18 @@
-If you are using the CVS version of freelinking.module version 1.9 or
-lower, you will need to reapply the freelinking.mysql script to your
-database. Please read this file carefully.
-
-What version of freelinking.module do I have?
+UPDATING THE FREELINKING.MODULE
 ==================================================
-The version of the module is given in the CVS "Id" tag. Look at the
-beginning of the file (you can use the 'head' command in Unix to see the
-first few lines) For a line that looks like this:
 
-   $Id$
-
-This tells you that you are using version 1.9 of freelinking.module,
-committed at 1:19 on 15 may 2005, by eafarris.
-
-Upgrading version 1.9 or earlier to the current CVS version
-==================================================
-As the new version of freelinking.module requires a database schema
-change, you'll need to modify your database to work with the new
-version. To do this, simply reapply the freelinking.mysql script as you
-did when you installed the module:
+The Drupal 4.5 and 4.6 versions of freelinking.module did not require a
+database table to function. Due to the added functionality, freelinking
+now requires a database table. Add it to your Drupal database in the
+normal way, ie., a line like this:
 
 $ mysql -u drupaluser -pdrupalpass drupaldb < freelinking.mysql
 
-NOTE: This will DROP your existing freelinking table, DELETING its
-contents. This was an unfortunate but necessary step. But do not worry,
-the table will be repopulated quickly! On every page view, the content's
-freelinks are checked in the table and added if necessary.
+UPDATING FROM THE CVS (HEAD) VERSION OF FREELINKING.MODULE
+==================================================
 
-IT WILL ALSO DROP the cache table, so the freelinking table gets
-repopulated as quickly as possible. This is a safe operation, but your
-Drupal site may experience some slowdowns as the cache table itself gets
-rebuilt.
+If you were using the CVS (also called "HEAD") version of
+freelinking.module between Drupal versions 4.6 and 4.7, there is a
+freelinking.install file included to handle the change in db schema
+between the CVS and 4.7 versions of the module.
 
