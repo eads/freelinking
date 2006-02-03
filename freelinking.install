@@ -1,12 +1,12 @@
 <?php
-function freelinking_update_1 {
+function freelinking_update_1() {
   return _system_update_utf8(array('freelinking'));
 };
 
-function freelinking_update_2 { // this is the update to the 4.7 version
+function freelinking_update_2() { // this is the update to the 4.7 version
   $ret = array();
 
-  switch ($GLOBALS['db_table']) {
+  switch ($GLOBALS['db_type']) {
     case 'mysql':
     case 'mysqli':
       $ret[] = update_sql('ALTER TABLE {freelinking} DROP PRIMARY KEY');
@@ -14,7 +14,7 @@ function freelinking_update_2 { // this is the update to the 4.7 version
       $ret[] = update_sql('ALTER TABLE {freelinking} ADD COLUMN hash CHAR(32)');
       $ret[] = update_sql('ALTER TABLE {freelinking} ADD COLUMN path VARCHAR(200)');
       $ret[] = update_sql('ALTER TABLE {freelinking} ADD COLUMN args VARCHAR(200)');
-      $ret[] = update_sql('ALTER TABLE {freelinking} ADD PRIMARY KEY hash ($hash)');
+      $ret[] = update_sql('ALTER TABLE {freelinking} ADD PRIMARY KEY hash (hash)');
       $ret[] = update_sql('DELETE FROM {freelinking}');
       break;
 
