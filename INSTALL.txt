@@ -3,16 +3,12 @@
 1. Copy the freelinking/ directory into your Drupal installation's
    modules/ directory.
 
-2. Install the database schema into your Drupal database, with a command
-   like (but probably not identical to):
-   mysql -u drupaldbuser -pdrupaldbpasswd drupaldb < freelinking.mysql
-      
-3. Enable the freelinking module in admin/modules.
+2. Enable the freelinking module in admin/modules.
 
-4. (optional) Set configuration options how you want them in
+3. (optional) Set configuration options how you want them in
    admin/settings/freelinking
 
-5. Enable the freelinking filter in one of your input formats in
+4. Enable the freelinking filter in one of your input formats in
    admin/filters. This filter should play well with other filters, but
    it might need to be last in the chain so that links aren't
    overwritten.
