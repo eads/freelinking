@@ -1,4 +1,29 @@
 <?php
+
+function freelinking_install() {
+
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query('CREATE TABLE {freelinking} (
+                   hash   CHAR(32)     NOT NULL,
+                   phrase VARCHAR(200) NOT NULL,
+                   path   VARCHAR(200) NOT NULL,
+                   args   VARCHAR(200) NOT NULL, 
+                   PRIMARY KEY(hash))
+                TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */;');
+      break;
+    case 'pgsql':
+      db_query('CREATE TABLE {freelinking} (
+                  hash   CHAR(32)     NOT NULL,
+                  phrase VARCHAR(200) NOT NULL,
+                  path   VARCHAR(200) NOT NULL,
+                  args   VARCHAR(200) NOT NULL,
+                  PRIMARY KEY(hash));');
+      break;
+    }
+} // endfunction freelinking_install
+
 function freelinking_update_1() {
   return _system_update_utf8(array('freelinking'));
 };
