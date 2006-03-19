@@ -126,6 +126,11 @@ function freelinking_settings() {
     $newnodeoptions[$nodetype] =  node_get_name($nodetype);
     $restrictoptions[$nodetype] =  node_get_name($nodetype);
   }
+  $notfoundoptions = array(
+    'create only' => t('Only try to create content'),
+    'no access search' => t('Search for content if user can\'t create'),
+    'always search' => t('Always search for content'),
+  );
   $form["freelinking_nodetype"] = array(
     '#title' => t('Default for new content'),
     '#type' => 'select',
@@ -133,6 +138,14 @@ function freelinking_settings() {
     '#default_value' => variable_get("freelinking_nodetype", 'blog'),
     '#description' => t('Type of content that the freelinking filter will create when clicking on a freelink without a target.')
   );
+  $form['freelinking_notfound'] = array(
+    '#title' => t('What to do if content not found'),
+    '#type' => 'select',
+    '#options' => $notfoundoptions,
+    '#default_value' => variable_get('freelinking_notfound', 'no access search'),
+    '#description' => t('What to do when clicking on a freelink without a target. Choose to always attempt to create the content, search if the user doesn\'t have permission to create (the default), or to always search. NOTE: search functions require search.module to be activated.'),
+  );
+
   $form["freelinking_restriction"] = array(
     '#title' => t('Restrict free links to this content type'),
     '#type' => 'select',
@@ -311,14 +324,31 @@ function _freelinking_exists($thetitle) { // helper function for freelinking_pag
 
 
 function _freelinking_make_link($thetitle) { // helper function for freelinking_page
+  global $user;
   // Returns a link to a node named $thetitle if found, or a link to new content otherwise.
   $nid = _freelinking_exists($thetitle); 
   if ($nid) { // the node exists, set the path to go there
     $freelink['path'] = 'node/' . $nid;
   }
   else { // node doesn't exist, set path to create it
-    $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'wiki');
-    $freelink['args'] = 'edit[title]=' . $thetitle;
+    switch (variable_get('freelinking_notfound', 'no access search')) {
+      case 'create only':
+        $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'blog');
+        $freelink['args'] = 'edit[title]=' . $thetitle;
+        break;
+      case 'no access search':
+        if (user_access('create ' . variable_get('freelinking_nodetype', 'blog'))) {
+          $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'blog');
+          $freelink['args'] = 'edit[title]=' . $thetitle;
+        }
+        else {
+          $freelink['path'] = 'search/node/' . $thetitle;
+        }
+        break;
+      case 'always search':
+        $freelink['path'] = 'search/node/' . $thetitle;
+        break;
+    } // endswitch notfound options
   }
   _freelinking_store($thetitle, $freelink['path'], $freelink['args']);
   return $freelink;
