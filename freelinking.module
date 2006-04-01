@@ -232,6 +232,14 @@ function freelinking_filter_tips($delta, $format, $long = FALSE) {
   return t($output);
 }
 
+function freelinking_form_alter($form_id, &$form) {
+  $type = $form['type']['#value'];
+
+  if (variable_get('freelinking_nodetype', 'blog') == $type && $_GET['edit']) { // on the right node type, with GET data
+    $form['title']['#default_value'] = $_GET['edit']['title']; // prepopulate the title field
+  } // endif node type and data
+} // endfunction freelinking_form_alter
+    
 
 /* 
  * PRIVATE FUNCTIONS BELOW
