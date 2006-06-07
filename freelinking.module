@@ -275,7 +275,7 @@ function _freelinking_do_filtering($text, $store = FALSE) {
          $replacement = '<a href="' . $freelink . '">' . $phrase . '</a>';
       }
       else {
-        $replacement = l($phrase, 'freelinking/' . rawurlencode(htmlspecialchars(rawurlencode($freelink))));
+        $replacement = l($phrase, 'freelinking/' . rawurlencode($freelink));
       }
     }
 
