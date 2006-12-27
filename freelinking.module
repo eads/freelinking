@@ -13,22 +13,27 @@ function freelinking_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
-    $items[] = array( 'path' => 'freelinking', 
-                      'title' => t('freelinks'),
-                      'access' => user_access('access content'),
-                      'callback' => 'freelinking_page'
-                    );
+    $items[] = array(
+      'path' => 'freelinking', 
+        'title' => t('Freelinks'),
+        'access' => user_access('access freelinking list'),
+        'callback' => 'freelinking_page',
+      );
+    $items[] = array(
+      'path' => 'admin/settings/freelinking', 
+      'title' => t('Freelinking'),
+      'description' => t('Configure wiki-style freelinking settings for node content.'),
+      'access' => user_access('administer freelinking'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('freelinking_settings'),
+    );
   }
   return $items;
 } // endfunction freelinking_menu
 
-function freelinking_help($section) {
-  switch ($section) {
-    case 'admin/modules#description':
-      return t('Enables freelinking between nodes using CamelCase and delimiters (like [[ and ]]).');
-      break;
-  } // endswitch ($section)
-} // endfunction freelinking_help
+function freelinking_perm() {
+  return array('administer freelinking', 'access freelinking list');
+}
 
 function freelinking_page($thetitle = NULL) {
   if ($thetitle) { // find the matching title
@@ -121,11 +126,6 @@ function freelinking_block($op = 'list', $delta = 0) {
 } // endfunction freelinking_block
 
 function freelinking_settings() {
-  $restrictoptions['none'] = t('No restrictions');
-  foreach (node_get_types()as $nodetype => $name) {
-    $newnodeoptions[$nodetype] =  node_get_name($nodetype);
-    $restrictoptions[$nodetype] =  node_get_name($nodetype);
-  }
   $notfoundoptions = array(
     'create only' => t('Only try to create content'),
     'no access search' => t('Search for content if user can\'t create'),
@@ -134,7 +134,7 @@ function freelinking_settings() {
   $form["freelinking_nodetype"] = array(
     '#title' => t('Default for new content'),
     '#type' => 'select',
-    '#options' => $newnodeoptions,
+    '#options' => node_get_types('names'),
     '#default_value' => variable_get("freelinking_nodetype", 'blog'),
     '#description' => t('Type of content that the freelinking filter will create when clicking on a freelink without a target.')
   );
@@ -149,7 +149,7 @@ function freelinking_settings() {
   $form["freelinking_restriction"] = array(
     '#title' => t('Restrict free links to this content type'),
     '#type' => 'select',
-    '#options' => $restrictoptions,
+    '#options' => array_merge(array('none' => t('No restrictions')), node_get_types('names')),
     '#default_value' => variable_get("freelinking_restriction", 'none'),
     '#description' => t('If desired, you can restrict the freelinking title search to just content of this type. Note that if it is not the same as the "Default for new content," above, new freelinked content cannot be found.')
   );
@@ -166,7 +166,7 @@ function freelinking_settings() {
     '#description' => t('If desired you can only turn the first occurance of a freelink into a link. This can improve the appearance of content that includes a lot of the same CamelCase words.')
   );
 
-  return $form;
+  return system_settings_form($form);
 }
 
 
@@ -236,7 +236,7 @@ function freelinking_form_alter($form_id, &$form) {
   $type = $form['type']['#value'];
 
   if (variable_get('freelinking_nodetype', 'blog') == $type && $_GET['edit']) { // on the right node type, with GET data
-    $form['title']['#default_value'] = $_GET['edit']['title']; // prepopulate the title field
+    $form['title']['#default_value'] = urldecode($_GET['edit']['title']); // prepopulate the title field
   } // endif node type and data
 } // endfunction freelinking_form_alter
     
@@ -345,7 +345,7 @@ function _freelinking_make_link($thetitle) { // helper function for freelinking_
         $freelink['args'] = 'edit[title]=' . $thetitle;
         break;
       case 'no access search':
-        if (user_access('create ' . variable_get('freelinking_nodetype', 'blog'))) {
+        if (node_access('create', variable_get('freelinking_nodetype', 'blog'))) {
           $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'blog');
           $freelink['args'] = 'edit[title]=' . $thetitle;
         }

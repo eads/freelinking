@@ -1,0 +1,3 @@
+; $Id$
+name = Freelinking
+description = Wiki-style freelinking for node content using CamelCase and delimiters.
