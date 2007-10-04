@@ -1,0 +1,20 @@
+<?php
+/* freelinking.schema
+ */
+
+function freelinking_schema() {
+  $schema['freelinking'] = array(
+    'fields' => array(
+      'hash' => array( 'type' => 'varchar', 'length' => 32, 'not null' => TRUE,),
+      'phrase' => array( 'type' => 'varchar', 'length' => 200, 'not null' => TRUE,),
+      'path' => array( 'type' => 'varchar', 'length' => 200, 'not null' => TRUE,),
+      'args' => array( 'type' => 'varchar', 'length' => 200, 'not null' => TRUE,),
+      ),
+    'primary key' => array('hash'),
+  );
+  return $schema;
+}
+    
+
+
+// vim: tw=300 nowrap syn=php
