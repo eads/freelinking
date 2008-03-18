@@ -1,8 +1,8 @@
 # freelinking.module -- a freelinking filter for Drupal
 ---
 
-by [ea. Farris] [1], with portions adapted from work done by Christopher
-Whipple on his [wiki.module] [2].
+by [ea. Farris] [1], with portions adapted from work done by [Christopher
+Whipple] [2] on his wiki.module.
 
 ## What it does
 
@@ -81,7 +81,7 @@ because of a feature request at http://drupal.org/node/20405 .
 References
 
 [1] : mailto:eafarris@gmail.com
-[2] : http://ninjafish.org/project/wiki
+[2] : http://crw.typepad.com
 [3] : http://drupal.org/project/interwiki
 
 ---
