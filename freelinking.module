@@ -32,7 +32,7 @@ function freelinking_perm() {
 function freelinking_page($thetitle = NULL) {
   if ($thetitle) { // find the matching title
     $freelink = _freelinking_make_link($thetitle);
-    drupal_goto($freelink['path'], isset($freelink['args']) ? $freelink['args'] : '');
+    drupal_goto($freelink['path'], isset($freelink['options']['query']) ? $freelink['options']['query'] : '');
   }
   else { // no title was passed -- show a list of wikiwords and status
     $header = array('phrase', 'target');
@@ -51,7 +51,7 @@ function freelinking_page($thetitle = NULL) {
           $link = l(t('see this content'), drupal_get_path_alias('node/' . $fltargetnid));
         }
         else { // content not found, show link to create
-          $link = '<a href=' . url($freelink['path'], $freelink['args']) . '>' . t('create this content') . '</a>';
+          $link = '<a href=' . url($freelink['path'], $freelink['options']) . '>' . t('create this content') . '</a>';
         }
         $rows[$i][] = $link;
       }
@@ -161,7 +161,7 @@ function freelinking_settings() {
   $form["freelinking_onceonly"] = array(
     '#title' => t('Only link first occurance'),
     '#type'  => 'checkbox',
-    '#default_value' => variable_get("freelinking_onceonly", 1),
+    '#default_value' => variable_get("freelinking_onceonly", 0) == 1 ? TRUE : FALSE,
     '#description' => t('If desired you can only turn the first occurance of a freelink into a link. This can improve the appearance of content that includes a lot of the same CamelCase words.')
   );
 
@@ -273,6 +273,7 @@ function _freelinking_do_filtering($text, $store = FALSE) {
       }
       if (preg_match('/^(http|mailto|https|ftp):/', $freelink)) {
          $replacement = '<a class="freelinking external" href="' . $freelink . '">' . $phrase . '</a>';
+         $store = FALSE;
       }
       else {
         $replacement = l($phrase, 'freelinking/' . rawurlencode($freelink), array('class' => 'freelinking'));
@@ -346,12 +347,16 @@ function _freelinking_make_link($thetitle) { // helper function for freelinking_
     switch (variable_get('freelinking_notfound', 'no access search')) {
       case 'create only':
         $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'story');
-        $freelink['args'] = 'edit[title]=' . $thetitle;
+        $freelink['options'] = array(
+          'query' => 'edit[title]=' . $thetitle,
+        );
         break;
       case 'no access search':
         if (node_access('create', variable_get('freelinking_nodetype', 'story'))) {
           $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'story');
-          $freelink['args'] = 'edit[title]=' . $thetitle;
+          $freelink['options'] = array(
+            'query' => 'edit[title]=' . $thetitle,
+          );
         }
         else {
           $freelink['path'] = 'search/node/' . $thetitle;
