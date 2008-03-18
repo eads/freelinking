@@ -161,7 +161,7 @@ function freelinking_settings() {
   $form["freelinking_onceonly"] = array(
     '#title' => t('Only link first occurance'),
     '#type'  => 'checkbox',
-    '#default_value' => variable_get("freelinking_onceonly", 0) == 1 ? TRUE : FALSE,
+    '#default_value' => variable_get("freelinking_onceonly", 1),
     '#description' => t('If desired you can only turn the first occurance of a freelink into a link. This can improve the appearance of content that includes a lot of the same CamelCase words.')
   );
 
