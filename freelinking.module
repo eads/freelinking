@@ -155,7 +155,7 @@ function freelinking_settings() {
   $form["freelinking_camelcase"] = array(
     '#title' => t('Allow CamelCase linking'),
     '#type' => 'checkbox',
-    '#default_value' => variable_get("freelinking_camelcase", 0) == 0 ? FALSE : TRUE,
+    '#default_value' => variable_get("freelinking_camelcase", 0),
     '#description' => t('If desired, you can enable CamelCase linking'),
   );
   $form["freelinking_onceonly"] = array(
