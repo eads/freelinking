@@ -8,26 +8,20 @@
    $Id$
 */
 
-function freelinking_menu($may_cache) {
-  global $user;
-  $items = array();
-
-  if ($may_cache) {
-    $items[] = array(
-      'path' => 'freelinking', 
-        'title' => t('Freelinks'),
-        'access' => user_access('access freelinking list'),
-        'callback' => 'freelinking_page',
-      );
-    $items[] = array(
-      'path' => 'admin/settings/freelinking', 
-      'title' => t('Freelinking'),
-      'description' => t('Configure wiki-style freelinking settings for node content.'),
-      'access' => user_access('administer freelinking'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('freelinking_settings'),
-    );
-  }
+function freelinking_menu() {
+  $items['freelinking'] = array(
+    'title' => 'Freelinks',
+    'description' => 'A list of freelinks used on this site',
+    'page callback' => 'freelinking_page',
+    'access arguments' => array('access freelinking list'),
+  );
+  $items['admin/settings/freelinking'] = array(
+    'title' => 'Freelinking settings',
+    'description' => 'Configure wiki-style freelinking settings for node content',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('freelinking_settings'),
+    'access arguments' => array('administer freelinking'),
+  );
   return $items;
 } // endfunction freelinking_menu
 
@@ -38,7 +32,7 @@ function freelinking_perm() {
 function freelinking_page($thetitle = NULL) {
   if ($thetitle) { // find the matching title
     $freelink = _freelinking_make_link($thetitle);
-    drupal_goto($freelink['path'], $freelink['args'] ? $freelink['args'] : '');
+    drupal_goto($freelink['path'], isset($freelink['args']) ? $freelink['args'] : '');
   }
   else { // no title was passed -- show a list of wikiwords and status
     $header = array('phrase', 'target');
@@ -63,8 +57,13 @@ function freelinking_page($thetitle = NULL) {
       }
       $i++;
     }
-
-    return theme('table', $header, $rows);
+    if (isset($rows)) {
+      return theme('table', $header, $rows);
+    }
+    else {
+      drupal_set_message(t('There are no freelinks on this site.'));
+      return '';
+    }
   }
 } // endfunction freelinking_page
 
@@ -135,7 +134,7 @@ function freelinking_settings() {
     '#title' => t('Default for new content'),
     '#type' => 'select',
     '#options' => node_get_types('names'),
-    '#default_value' => variable_get("freelinking_nodetype", 'blog'),
+    '#default_value' => variable_get("freelinking_nodetype", 'story'),
     '#description' => t('Type of content that the freelinking filter will create when clicking on a freelink without a target.')
   );
   $form['freelinking_notfound'] = array(
@@ -156,8 +155,8 @@ function freelinking_settings() {
   $form["freelinking_camelcase"] = array(
     '#title' => t('Allow CamelCase linking'),
     '#type' => 'checkbox',
-    '#default_value' => variable_get("freelinking_camelcase", 1) == 1 ? TRUE : FALSE,
-    '#description' => t('If desired, you can disable CamelCase linking')
+    '#default_value' => variable_get("freelinking_camelcase", 0) == 0 ? FALSE : TRUE,
+    '#description' => t('If desired, you can enable CamelCase linking'),
   );
   $form["freelinking_onceonly"] = array(
     '#title' => t('Only link first occurance'),
@@ -232,12 +231,13 @@ function freelinking_filter_tips($delta, $format, $long = FALSE) {
   return t($output);
 }
 
-function freelinking_form_alter($form_id, &$form) {
-  $type = $form['type']['#value'];
-
-  if (variable_get('freelinking_nodetype', 'blog') == $type && $_GET['edit']) { // on the right node type, with GET data
-    $form['title']['#default_value'] = urldecode($_GET['edit']['title']); // prepopulate the title field
-  } // endif node type and data
+function freelinking_form_alter(&$form, $form_state, $form_id) {
+  if (isset($form['type'])) {
+    $type = $form['type']['#value'];
+    if (variable_get('freelinking_nodetype', 'story') == $type && $_GET['edit']) { // on the right node type, with GET data
+      $form['title']['#default_value'] = urldecode($_GET['edit']['title']); // prepopulate the title field
+    } // endif node type and data
+  } //  on a node creation form
 } // endfunction freelinking_form_alter
     
 
@@ -272,10 +272,10 @@ function _freelinking_do_filtering($text, $store = FALSE) {
          $phrase = substr($phrase, $barpos + 1);
       }
       if (preg_match('/^(http|mailto|https|ftp):/', $freelink)) {
-         $replacement = '<a href="' . $freelink . '">' . $phrase . '</a>';
+         $replacement = '<a class="freelinking external" href="' . $freelink . '">' . $phrase . '</a>';
       }
       else {
-        $replacement = l($phrase, 'freelinking/' . rawurlencode($freelink));
+        $replacement = l($phrase, 'freelinking/' . rawurlencode($freelink), array('class' => 'freelinking'));
       }
     }
 
@@ -288,7 +288,7 @@ function _freelinking_do_filtering($text, $store = FALSE) {
     $text = preg_replace($pattern, $replacement, $text, variable_get("freelinking_onceonly", 0) ? 1 : -1);
     
     if ($store) {
-      _freelinking_store($phrase, $replacement);
+      _freelinking_store($freelink, $replacement);
     }
   } // foreach wikiword
   return $text;
@@ -298,12 +298,16 @@ function _freelinking_store($phrase, $path, $args=NULL) { // store freelinking p
   $hash = md5($phrase . $path . $args);
   $query = "SELECT hash FROM {freelinking} WHERE phrase = '%s'";
   $result = db_query($query, $phrase); 
-  if ( !db_num_rows($result)) { // not in the db
+  $num_rows = FALSE;
+  while ($dbobj = db_fetch_object($result)) {
+    $num_rows = TRUE;
+    $dbhash = $dbobj;
+  }
+  if ( !$num_rows) { // not in the db
     $query = "INSERT INTO {freelinking} (hash, phrase, path, args) VALUES ('%s', '%s', '%s', '%s')";
     $result = db_query($query, $hash, $phrase, $path, $args);
   } // endif row not found in table
   else { // in the db, but does it match?
-    $dbhash = db_fetch_object($result);
     if ($dbhash->hash != $hash) { // hashes don't match, replace db entry with new values
       $query = "UPDATE {freelinking} SET hash = '%s', path = '%s', args = '%s' WHERE phrase = '%s'";
       $result = db_query($query, $hash, $path, $args, $phrase);
@@ -341,12 +345,12 @@ function _freelinking_make_link($thetitle) { // helper function for freelinking_
   else { // node doesn't exist, set path to create it
     switch (variable_get('freelinking_notfound', 'no access search')) {
       case 'create only':
-        $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'blog');
+        $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'story');
         $freelink['args'] = 'edit[title]=' . $thetitle;
         break;
       case 'no access search':
-        if (node_access('create', variable_get('freelinking_nodetype', 'blog'))) {
-          $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'blog');
+        if (node_access('create', variable_get('freelinking_nodetype', 'story'))) {
+          $freelink['path'] = 'node/add/' . variable_get('freelinking_nodetype', 'story');
           $freelink['args'] = 'edit[title]=' . $thetitle;
         }
         else {
@@ -358,7 +362,7 @@ function _freelinking_make_link($thetitle) { // helper function for freelinking_
         break;
     } // endswitch notfound options
   }
-  _freelinking_store($thetitle, $freelink['path'], $freelink['args']);
+  _freelinking_store($thetitle, $freelink['path'], isset($freelink['args']) ? $freelink['args'] : '');
   return $freelink;
 } // endfunction _freelinking_make_link
 
