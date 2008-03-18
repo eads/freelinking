@@ -254,7 +254,7 @@ function _freelinking_do_filtering($text, $store = FALSE) {
   $freelinkingregexp = '/\[\[.+]]/U'; // this finds [[links like this]], un-greedily
   preg_match_all($freelinkingregexp, $text, $flmatches);
   if ($allowcamelcase) {
-     $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
+     $camelcaseregexp = '/\b(?<!\/)([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
      preg_match_all($camelcaseregexp, $text, $ccmatches);
      $wikiwords = array_merge($ccmatches[0], $flmatches[0]);
   }
@@ -281,7 +281,7 @@ function _freelinking_do_filtering($text, $store = FALSE) {
     }
 
     else if ($allowcamelcase) { // it's a CamelCase, expressions are a bit simpler
-      $pattern = '/\b' . $wikiword . '\b(?![^<]*>)/';
+      $pattern = '/\b(?<!\/)' . $wikiword . '\b(?![^<]*>)/';
       $phrase = $wikiword; // consistency for the db
       $freelink = $wikiword; // also for the db
       $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
