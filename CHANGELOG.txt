@@ -1,50 +1,7 @@
-# CHANGELOG.txt for freelinking.module
+# CHANGELOG.txt for freelinking.module for Drupal 6, version 1.x.
 
-version 1.28
----
-* first version tagged for Drupal 4.7. Problems where duplicate db
-  entries were created should be gone now as a hash is computed and used
-  as a primary key. This should also solve the problems with versions of
-  MySQL earlier than 5.0, where longer primary keys were not allowed.
-  Also added an 'args' column to the table to handle the new url()
-  syntax.
-
----
-skipped lots of versions; bad bad bad! Must keep up the changelog.
----
-
-version 1.4
----
-* applied a modified version of a patch by Wes Cowley
-  (http://drupal.org/node/21433) that implements a syntax similar to
-  4.5's title.module. Thanks, Wes! That should fix the feature noted
-  above.  This does (slightly) break the freelinking page, since links
-  can be to outside URLs, and can also be to a different target than the
-  source text. I'm working on this.
-
-* you can optionally turn off CamelCase. This is also part of Wes's
-  patch.
-
-* implemented filter tips. That should fix http://drupal.org/node/21434
-
-version 1.3
----
-* implemented a database table that keeps a record of freelinking
-  phrases. When freelinking_page() is called without an argument
-  (http://drupalsite.com/freelinking/) a list of freelinking phrases are
-  given, along with their status, either "create this content" or a link
-  to the content. This could be used to encourage users to create
-  content that is a target of a link, but doesn't yet exist.
-
-version 1.2
----
-initial public release.
-
-Evolved from ninjafishwiki.module, and dwiki.module before that. 
-removed wiki nodetype. This is more appropriately handled by flexinode,
-or by reusing a core node type like blog or story.
-
----
-freelinking.module by ea.Farris <eafarris@gmail.com>
-$Id$
-
+## freelinking-6.x-1.3
+  * Implemented bneijt's fix for #231386.
+  * Removed 'https' from the regex. Superfluous.
+  * Fix for #145352.
+  * Fix for #123015.

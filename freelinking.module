@@ -41,8 +41,8 @@ function freelinking_page($thetitle = NULL) {
     $i = 0;
     while ($freelink = db_fetch_object($result)) { // looping through phrase, target pairs
       $rows[$i][] = urldecode($freelink->phrase);
-      if (preg_match('/^(http|mailto|https|ftp):/', $freelink->path)) { // an absolute link
-        $rows[$i][] = '<a class="freelink" href="' . $freelink->path . '">' . $flpair->path . '</a>';
+      if (preg_match('/^(http|mailto|ftp):/', $freelink->path)) { // an absolute link
+        $rows[$i][] = '<a class="freelink" href="' . $freelink->path . '">' . $freelink->path . '</a>';
       }
       else { // a freelink
         $fltargetnid = _freelinking_exists($freelink->phrase);
@@ -148,9 +148,10 @@ function freelinking_settings() {
   $form["freelinking_restriction"] = array(
     '#title' => t('Restrict free links to this content type'),
     '#type' => 'select',
+    '#multiple' => 'true',
     '#options' => array_merge(array('none' => t('No restrictions')), node_get_types('names')),
     '#default_value' => variable_get("freelinking_restriction", 'none'),
-    '#description' => t('If desired, you can restrict the freelinking title search to just content of this type. Note that if it is not the same as the "Default for new content," above, new freelinked content cannot be found.')
+    '#description' => t('If desired, you can restrict the freelinking title search to just content of these types. Note that if this does not include as the "Default for new content," above, new freelinked content cannot be found.')
   );
   $form["freelinking_camelcase"] = array(
     '#title' => t('Allow CamelCase linking'),
@@ -254,7 +255,7 @@ function _freelinking_do_filtering($text, $store = FALSE) {
   $freelinkingregexp = '/\[\[.+]]/U'; // this finds [[links like this]], un-greedily
   preg_match_all($freelinkingregexp, $text, $flmatches);
   if ($allowcamelcase) {
-     $camelcaseregexp = '/\b(?<!\/)([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
+     $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
      preg_match_all($camelcaseregexp, $text, $ccmatches);
      $wikiwords = array_merge($ccmatches[0], $flmatches[0]);
   }
@@ -271,17 +272,17 @@ function _freelinking_do_filtering($text, $store = FALSE) {
          $freelink = substr($freelink, 0, $barpos);
          $phrase = substr($phrase, $barpos + 1);
       }
-      if (preg_match('/^(http|mailto|https|ftp):/', $freelink)) {
+      if (preg_match('/^(http|mailto|ftp):/', $freelink)) {
          $replacement = '<a class="freelinking external" href="' . $freelink . '">' . $phrase . '</a>';
          $store = FALSE;
       }
       else {
-        $replacement = l($phrase, 'freelinking/' . rawurlencode($freelink), array('class' => 'freelinking'));
+        $replacement = l(html_entity_decode($phrase), 'freelinking/' . rawurlencode($freelink), array('class' => 'freelinking'));
       }
     }
 
     else if ($allowcamelcase) { // it's a CamelCase, expressions are a bit simpler
-      $pattern = '/\b(?<!\/)' . $wikiword . '\b(?![^<]*>)/';
+      $pattern = '/\b' . $wikiword . '\b(?![^<]*>)/';
       $phrase = $wikiword; // consistency for the db
       $freelink = $wikiword; // also for the db
       $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
@@ -322,10 +323,11 @@ function _freelinking_exists($thetitle) { // helper function for freelinking_pag
   $query = "SELECT nid FROM {node} WHERE title = '%s'";
   $noderestrict = variable_get('freelinking_restriction', 'none');
   if ($noderestrict != 'none') { // need to add the where clause
-    $query .= " AND type = '%s'";
-    $result = db_query($query, $title, $noderestrict);
-  }
-  else { // no restriction. query is fine but db_query doesn't need the extra argument
+    foreach ($noderestrict as $restrictedtype)  {
+      $clauseparts[] = 'type = "' . $restrictedtype . '"';
+    }
+    $restrictions = implode(' OR ', $clauseparts);
+    $query .= " AND (" . $restrictions . ')';
     $result = db_query($query, $title);
   }
 // FIXME ***
@@ -338,6 +340,8 @@ function _freelinking_exists($thetitle) { // helper function for freelinking_pag
 
 function _freelinking_make_link($thetitle) { // helper function for freelinking_page
   global $user;
+  $freelink = array('options' => array()); // ensure that 'options' is an array
+  
   // Returns a link to a node named $thetitle if found, or a link to new content otherwise.
   $nid = _freelinking_exists($thetitle); 
   if ($nid) { // the node exists, set the path to go there
