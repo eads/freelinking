@@ -321,15 +321,15 @@ function _freelinking_exists($thetitle) { // helper function for freelinking_pag
   // looks through the db for nodes matching $title. Returns the nid if such a node exists, otherwise, returns 0
   $title = urldecode($thetitle);
   $query = "SELECT nid FROM {node} WHERE title = '%s'";
-  $noderestrict = variable_get('freelinking_restriction', 'none');
-  if ($noderestrict != 'none') { // need to add the where clause
+  $noderestrict = variable_get('freelinking_restriction', NULL);
+  if (isset($noderestrict) && $noderestrict['none'] =! 'none') { // need to add the where clause
     foreach ($noderestrict as $restrictedtype)  {
       $clauseparts[] = 'type = "' . $restrictedtype . '"';
     }
     $restrictions = implode(' OR ', $clauseparts);
     $query .= " AND (" . $restrictions . ')';
-    $result = db_query($query, $title);
   }
+  $result = db_query($query, $title);
 // FIXME ***
   while ($node = db_fetch_object($result)) { // only one, I hope... what if there's more than one?
     $nid = $node->nid;
