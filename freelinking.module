@@ -29,43 +29,166 @@ function freelinking_perm() {
   return array('administer freelinking', 'access freelinking list');
 }
 
+function freelinking_theme($existing, $type, $theme, $path) {
+  return array(
+    'freelinking_page_form' => array(
+      'arguments' => array(
+        'form' => NULL,
+      ),
+    ),
+  );
+} // endfunction freelinking_theme
+
 function freelinking_page($thetitle = NULL) {
+  if ($_POST['operation'] == 'delete' && $_POST['links']) {
+    return drupal_get_form('freelinking_multiple_delete_confirm', $_POST['links']);
+  }
+  elseif ($_POST['operation'] == 'delete-all') {
+    return drupal_get_form('freelinking_delete_all_confirm');
+  }
+
   if ($thetitle) { // find the matching title
     $freelink = _freelinking_make_link($thetitle);
     drupal_goto($freelink['path'], isset($freelink['options']['query']) ? $freelink['options']['query'] : '');
   }
   else { // no title was passed -- show a list of wikiwords and status
-    $header = array('phrase', 'target');
-    $query = "SELECT phrase, path FROM {freelinking} ORDER BY phrase";
-    $result = db_query($query);
-    $i = 0;
-    while ($freelink = db_fetch_object($result)) { // looping through phrase, target pairs
-      $rows[$i][] = urldecode($freelink->phrase);
-      if (preg_match('/^(http|mailto|ftp):/', $freelink->path)) { // an absolute link
-        $rows[$i][] = '<a class="freelink" href="' . $freelink->path . '">' . $freelink->path . '</a>';
-      }
-      else { // a freelink
-        $fltargetnid = _freelinking_exists($freelink->phrase);
-        $freelink = _freelinking_make_link($freelink->phrase);
-        if ($fltargetnid) {
-          $link = l(t('see this content'), drupal_get_path_alias('node/' . $fltargetnid));
-        }
-        else { // content not found, show link to create
-          $link = '<a href=' . url($freelink['path'], $freelink['options']) . '>' . t('create this content') . '</a>';
-        }
-        $rows[$i][] = $link;
-      }
-      $i++;
-    }
-    if (isset($rows)) {
-      return theme('table', $header, $rows);
-    }
-    else {
-      drupal_set_message(t('There are no freelinks on this site.'));
-      return '';
-    }
+    return drupal_get_form('freelinking_page_form', user_access('administer freelinking'));
   }
 } // endfunction freelinking_page
+
+function freelinking_page_form($admin = TRUE) {
+  if ($admin) {
+    $form['options'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Update options'),
+      '#prefix' => '<div class="container-inline">',
+      '#suffix' => '</div>',
+    );
+    $options = array(
+      'delete' => t('Delete'),
+      'delete-all' => t('Delete All'),
+    );
+    $form['options']['operation'] = array(
+      '#type' => 'select',
+      '#options' => $options,
+      '#default_value' => 'delete',
+    );
+    $form['options']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Update'),
+    );
+
+    $header = array(
+      array(
+        'data' => theme('table_select_header_cell'),
+      ),
+      array(
+        'data' => t('Phrase'),
+        'field' => 'phrase',
+        'sort' => 'asc',
+      ),
+      array(
+        'data' => t('Target'),
+        'field' => 'phrase',
+      ),
+    );
+  } // endif $admin
+  else {
+    $header = array(
+      array(
+        'data' => t('Phrase'),
+        'field' => 'phrase',
+        'sort' => 'asc',
+      ),
+      array(
+        'data' => t('Target'),
+        'field' => 'phrase',
+      ),
+    );
+  } // endifelse not $admin
+      
+  $query = 'SELECT hash, phrase, path FROM {freelinking}' . tablesort_sql($header);
+  $result = pager_query($query, 50);
+  while ($freelink = db_fetch_object($result)) { // looping through pairs
+    $hash = $freelink->hash;
+    $links[$hash] = '';
+    $form['phrase'][$hash] = array(
+      '#value' => urldecode($freelink->phrase),
+    );
+
+    $fltargetnid = _freelinking_exists($freelink->phrase);
+    $freelink = _freelinking_make_link($freelink->phrase);
+    if ($fltargetnid) { // node exists
+      $link = l(t('see this content'), drupal_get_path_alias('node/' . $fltargetnid));
+    }
+    else { // no content found, show create link
+      $link = '<a href="' . url($freelink['path'], array()) . '">' . t('create this content') . '</a>';
+    }
+    $form['target'][$hash] = array(
+      '#value' => $link,
+    );
+  } // endwhile looping through links
+  
+  if ($admin) {
+    $form['links'] = array(
+      '#type' => 'checkboxes',
+      '#options' => $links,
+    );
+  } // endif admin
+
+  $form['pager'] = array(
+    '#value' => theme('pager', NULL, 50, 0),
+  );
+
+  return $form;
+} // endfunction freelinking_page_form
+
+function theme_freelinking_page_form($form) {
+  if (isset($form['options']) && is_array($form['options'])) {
+    $output .= drupal_render($form['options']);
+    $header = array(
+      theme('table_select_header_cell'),
+      array(
+        'data' => t('Phrase'),
+        'field' => 'phrase',
+        'sort' => 'asc',
+      ),
+      array(
+        'data' => t('Target'),
+        'field' => 'path',
+      ),
+    );
+  }
+
+  if (isset($form['phrase']) && is_array($form['phrase'])) {
+    foreach (element_children($form['phrase']) as $key) {
+      $row = array();
+      if (isset($form['links'][$key])) {
+        $row[] = drupal_render($form['links'][$key]);
+      }
+      $row[] = drupal_render($form['phrase'][$key]);
+      $row[] = drupal_render($form['target'][$key]);
+      $rows[] = $row;
+    }
+  } else {
+    $rows[] = array(
+      array(
+        'data' => t('No freelinks available.'),
+        'colspan' => user_access('administer freelinking') ? '3' : '2',
+      ),
+    );
+  } // endif else no freelinks
+
+  $output .= theme('table', $header, $rows);
+  if ($form['pager']['#value']) {
+    $output .= drupal_render($form['pager']);
+  }
+
+  $output .= drupal_render($form);
+
+  return $output;
+} // endfunction theme_freelinking_page_form
+
 
 function freelinking_block($op = 'list', $delta = 0) {
   switch ($op) {
@@ -241,6 +364,93 @@ function freelinking_form_alter(&$form, $form_state, $form_id) {
   } //  on a node creation form
 } // endfunction freelinking_form_alter
     
+function freelinking_page_form_validate($form_id, &$form_state) {
+  $links = array_filter($form_values['links']);
+  if (count($links) == 0) {
+    form_set_error('form', t('No items selected'));
+  }
+} // endfunction freelinking_page_form_validate
+
+function freelinking_page_form_submit($form_id, &$form_state) {
+  // !!! May be possible to call this w/o the right privileges. More research is needed.
+  $op = $form_state['values']['operation'];
+
+  // Filter out unchecked links
+  $links = array_filter($form_state['values']['links']);
+
+/*
+ * perhaps perform other operations besides delete (which requires a confirm form, from hook_page()
+ * maybe this would be better done w/ a multistep form, which would allow for more complex operations
+ *
+ * for now, don't do anything, and let hook_page() confirm the delete
+ */
+
+} // endfunction freelinking_page_form_submit
+
+function freelinking_multiple_delete_confirm($links = array()) {
+  $form['links'] = array(
+    '#prefix' => '<ul>',
+    '#suffix' => '</ul>',
+    '#tree' => TRUE,
+  );
+  // array_filter() returns only elements that are TRUE
+  foreach ($links['post']['links'] as $hash => $value) {
+    $phrase = db_result(db_query('SELECT phrase FROM {freelinking} WHERE hash = "%s"', $hash));
+    $form['links'][$hash] = array(
+      '#type' => 'hidden',
+      '#value' => $hash,
+      '#prefix' => '<li>',
+      '#suffix' => check_plain($phrase),
+    );
+  } //endforeach looping through $links
+  $form['operation'] = array(
+    '#type' => 'hidden',
+    '#value' => 'delete',
+  );
+
+
+  return confirm_form($form,
+    t('Are you sure you want to delete these items?'),
+    'freelinking',
+    t('This action cannot be undone.'),
+    t('Delete all'),
+    t('Cancel')
+  );
+} // endfunction freelinking_mutliple_delete_confirm
+
+function freelinking_multiple_delete_confirm_submit($form_id, &$form_state) {
+  if ($form_state['values']['confirm']) {
+    foreach ($form_state['values']['links'] as $hash => $phrase) {
+      _freelinking_delete($hash);
+    } // endforeach looping through $freelinks
+  } // endif confirm
+  drupal_set_message(t('The freelinks have been deleted.'));
+  return 'freelinking';
+} // endfunction freelinking_multiple_delete_confirm_submit
+
+function freelinking_delete_all_confirm() {
+  $form['operation'] = array(
+    '#type' => 'hidden',
+    '#value' => 'delete-all',
+  );
+  return confirm_form($form,
+    t('Are you sure you want to delete <strong>all</strong> freelinks?'),
+    'freelinking',
+    t('This action cannot be undone.'),
+    t('Delete all'),
+    t('Cancel')
+  );
+} // endfunction freelinking_delete_all_confirm
+
+
+function freelinking_delete_all_confirm_submit($form_id, &$form_state) {
+  if ($form_state['values']['confirm']) {
+    _freelinking_delete_all();
+    drupal_set_message(t('<strong>All</strong> freelinks have been deleted.'));
+  }
+  return 'freelinking';
+} // endfunction freelinking_delete_all_confirm_submit
+
 
 /* 
  * PRIVATE FUNCTIONS BELOW
@@ -317,6 +527,16 @@ function _freelinking_store($phrase, $path, $args=NULL) { // store freelinking p
   } // endifelse row found
 } // endfunction _freelinking_store
 
+function _freelinking_delete($hash) {
+  $query = "DELETE FROM {freelinking} WHERE hash = '%s'";
+  $result = db_query($query, $hash);
+   // do something with result?
+}
+
+function _freelinking_delete_all() {
+  db_query('DELETE FROM {freelinking}');
+}
+
 function _freelinking_exists($thetitle) { // helper function for freelinking_page
   // looks through the db for nodes matching $title. Returns the nid if such a node exists, otherwise, returns 0
   $title = urldecode($thetitle);
@@ -336,7 +556,6 @@ function _freelinking_exists($thetitle) { // helper function for freelinking_pag
   }
   return (empty($nid) ? 0 : $nid);
 }
-
 
 function _freelinking_make_link($thetitle) { // helper function for freelinking_page
   global $user;
