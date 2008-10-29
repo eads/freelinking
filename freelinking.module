@@ -194,20 +194,13 @@ function freelinking_block($op = 'list', $delta = 0) {
   switch ($op) {
     case 'list':
       $blocks[0]['info'] = t('Freelink targets that need to be created');
+      $blocks[0]['cache'] = BLOCK_NO_CACHE;
       return $blocks;
       break;
     case 'configure':
       $form['freelinking_block_options'] = array(
         '#type' => 'fieldset',
         '#title' => t('Freelinking Block Options')
-      );
-      $form['freelinking_block_options']['freelinking_blocktitle'] = array(
-        '#title' => t('Title of freelinks block'),
-        '#type' => 'textfield',
-        '#default_value' => variable_get('freelinking_blocktitle', t('Create This Content')),
-        '#size' => 30,
-        '#maxlength' => 60,
-        '#description' => t('Title of the block that shows freelinked phrases without content.')
       );
       for ($i = 5; $i <=30; $i=$i+5) {
         $options[$i] = $i;
@@ -225,7 +218,7 @@ function freelinking_block($op = 'list', $delta = 0) {
     case 'view':
       switch ($delta) {
         case 0:
-          $query = 'SELECT * FROM {freelinking} WHERE path LIKE "%node/add%" ORDER BY RAND()';
+          $query = 'SELECT * FROM {freelinking} WHERE path LIKE "node/add%" ORDER BY RAND()';
           $result = db_query($query);
           $i = 0;
           $content = '';
@@ -236,7 +229,7 @@ function freelinking_block($op = 'list', $delta = 0) {
             $items[] = l(urldecode($freelink->phrase), $freelink->path, array(), $freelink->args);
             $i++;
           } // endwhile looping through flpairs
-          $block['subject'] = variable_get('freelinking_blocktitle', 'Create This Content');
+          $block['subject'] = t('Create This Content');
           $block['content'] = theme('item_list', $items);
           return $block;
         default:
