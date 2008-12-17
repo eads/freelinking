@@ -189,7 +189,6 @@ function theme_freelinking_page_form($form) {
   return $output;
 } // endfunction theme_freelinking_page_form
 
-
 function freelinking_block($op = 'list', $delta = 0) {
   switch ($op) {
     case 'list':
@@ -266,7 +265,7 @@ function freelinking_settings() {
     '#type' => 'select',
     '#multiple' => 'true',
     '#options' => array_merge(array('none' => t('No restrictions')), node_get_types('names')),
-    '#default_value' => variable_get("freelinking_restriction", 'none'),
+    '#default_value' => variable_get("freelinking_restriction", array('none')),
     '#description' => t('If desired, you can restrict the freelinking title search to just content of these types. Note that if this does not include as the "Default for new content," above, new freelinked content cannot be found.')
   );
   $form["freelinking_camelcase"] = array(
@@ -284,7 +283,6 @@ function freelinking_settings() {
 
   return system_settings_form($form);
 }
-
 
 function freelinking_filter($op, $delta = 0, $format = -1, $text = '') {
   switch ($op) {
@@ -435,7 +433,6 @@ function freelinking_delete_all_confirm() {
   );
 } // endfunction freelinking_delete_all_confirm
 
-
 function freelinking_delete_all_confirm_submit($form_id, &$form_state) {
   if ($form_state['values']['confirm']) {
     _freelinking_delete_all();
@@ -443,7 +440,6 @@ function freelinking_delete_all_confirm_submit($form_id, &$form_state) {
   }
   return 'freelinking';
 } // endfunction freelinking_delete_all_confirm_submit
-
 
 /* 
  * PRIVATE FUNCTIONS BELOW
@@ -455,15 +451,15 @@ function freelinking_delete_all_confirm_submit($form_id, &$form_state) {
 
 function _freelinking_do_filtering($text, $store = FALSE) {
   $allowcamelcase = variable_get("freelinking_camelcase", TRUE);
-  $freelinkingregexp = '/\[\[.+]]/U'; // this finds [[links like this]], un-greedily
-  preg_match_all($freelinkingregexp, $text, $flmatches);
+  $freelinkingregexp = '/[^!](\[\[.+]])/Uu'; // this finds [[links like this]], un-greedily and utf-8
+  preg_match_all($freelinkingregexp, $text, $flmatches, PREG_PATTERN_ORDER);
   if ($allowcamelcase) {
      $camelcaseregexp = '/\b([[:upper:]][[:lower:]]+){2,}\b/'; // this gets us close, but is not perfect. Example: ThisIsACamelCaseWord won't match (two caps in a row)
      preg_match_all($camelcaseregexp, $text, $ccmatches);
-     $wikiwords = array_merge($ccmatches[0], $flmatches[0]);
+     $wikiwords = array_merge($ccmatches[0], $flmatches[1]);
   }
   else {
-     $wikiwords = $flmatches[0];
+     $wikiwords = $flmatches[1];
   }
   foreach (array_unique($wikiwords) as $wikiword) {
     if (substr($wikiword, 0, 2) == '[[') { // if it's a freelink, the expressions are different
@@ -480,15 +476,15 @@ function _freelinking_do_filtering($text, $store = FALSE) {
          $store = FALSE;
       }
       else {
-        $replacement = l(html_entity_decode($phrase), 'freelinking/' . rawurlencode($freelink), array('class' => 'freelinking'));
+        $replacement = l(html_entity_decode($phrase), 'freelinking/' . rawurlencode($freelink), array('attributes' => array('class' => 'freelinking')));
       }
     }
 
     else if ($allowcamelcase) { // it's a CamelCase, expressions are a bit simpler
-      $pattern = '/\b' . $wikiword . '\b(?![^<]*>)/';
+      $pattern = '/(?<!\/)\b' . $wikiword . '\b(?![^<]*>)/';
       $phrase = $wikiword; // consistency for the db
       $freelink = $wikiword; // also for the db
-      $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword));
+      $replacement = l($wikiword, 'freelinking/' . urlencode($wikiword), array('attributes' => array('class' => 'freelinking')));
     }
     $text = preg_replace($pattern, $replacement, $text, variable_get("freelinking_onceonly", 0) ? 1 : -1);
     
@@ -531,13 +527,9 @@ function _freelinking_delete_all() {
 }
 
 function _freelinking_exists($thetitle) { // helper function for freelinking_page
-  global $language;
   // looks through the db for nodes matching $title. Returns the nid if such a node exists, otherwise, returns 0
   $title = urldecode($thetitle);
   $query = "SELECT nid FROM {node} WHERE title = '%s'";
-  if (module_exists('locale')) {
-    $query .= " AND (language = '$language->language' OR language = '')";
-  }
   $noderestrict = variable_get('freelinking_restriction', NULL);
   if (isset($noderestrict) && $noderestrict['none'] =! 'none') { // need to add the where clause
     foreach ($noderestrict as $restrictedtype)  {
