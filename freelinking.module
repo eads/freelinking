@@ -476,7 +476,16 @@ function _freelinking_do_filtering($text, $store = FALSE) {
          $store = FALSE;
       }
       else {
-        $replacement = l(html_entity_decode($phrase), 'freelinking/' . rawurlencode($freelink), array('attributes' => array('class' => 'freelinking')));
+      	$flnkexists = _freelinking_exists($freelink);
+      	if ($flnkexists) {
+      		$tooltip = html_entity_decode($freelink);
+	      	$lnkoptions = array('attributes' => array('title' => $tooltip));
+      		$replacement = l(html_entity_decode($phrase), drupal_get_path_alias('node/' . $flnkexists), $lnkoptions);
+      	} else {
+      		//link doesn't exist - apply nofollow
+      		$lnkoptions = array('attributes' => array('class' => 'freelinking noexist','rel' => 'nofollow'));
+      		$replacement = l(html_entity_decode($phrase), 'freelinking/' . rawurlencode($freelink), $lnkoptions);
+       	}
       }
     }
 
