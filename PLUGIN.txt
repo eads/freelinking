@@ -1,0 +1,139 @@
+# Plugins for Freelining 3
+---
+
+Freelinking 3 uses a plugin system to enhance the freelinking syntax and
+enable different kinds of free linking. Plugins can be simple URL
+constructors, or can use more sophisticated methods and have complete
+control over the link and target text. Plugins are small include files
+that live in the plugins/ directory under the freelinking module's
+directory.
+
+## Format of a Freelinking 3 plugin
+
+Freelinking 3 plugins are PHP include files, whose name starts with
+"freelinking_" and ends with the extension ".inc". For example, if you
+wish to write a plugin called "mike," the file's name would be
+"freelinking_mike.inc" and it would live in the plugins/ directory under
+the freelinking module's directory.
+
+A FL3 plugin only has one requirement: it must add an element to the
+$freelinking global array. 
+
+### The $freelinking array
+
+Your plugin's element in the $freelinking array is named after your
+plugin. In the example above of a plugin called "mike," the element your
+plugin would add to the array would be `$freelinking['mike']`. Your
+element defines an array, with the following elements:
+
+* 'indicator'  
+  The indicator is a string that defines a regular expression that will
+  be used to differentiate this freelink from other freelink types. For
+  our example, a good indicator value might be '/mike/'. This means that
+  freelinks for this plugin will look like `[[mike:something]]`.
+  Freelinking uses the colon (":") as the separator between the
+  indicator and the link text. It should not be part of the indicator
+  string. The indicator string is *required*.
+
+* 'translate'  
+  This is an array of characters that can be used to translate
+  characters in the link text to other characters that will be used in
+  the URL. The primary use case for this is to translate spaces into
+  underscores or dashes as different systems require. In the example of
+  our "mike" plugin, the website uses dashes instead of spaces, so we'll
+  use a value for 'translate' of `array(' ' => '-')`. For reference,
+  this array will be run through the PHP function
+  [strtr()](http://http://us.php.net/manual/en/function.strtr.php). The
+  translate array is optional.
+
+* 'replacement'  For simple URL replacement freelinks, the 'replacement'
+  is a string for the URL, where the special string '%1' gets replaced
+  by the link text in the freelink. For our example, if we're going to
+  http://example.com/mike/something, we'd use the replacement string
+  "http://example.com/mike/%1" and our freelink text would be put in
+  place of the %1. If you are using a URL replacement style of freelink,
+  the 'replacement' string is *required*.
+
+* 'callback'  
+  More complex plugins can use a callback element in their array to
+  define a php function that will be used to come up with the link. This
+  function will be passed the entire match array of the freelink as
+  $target, with the target portion of the freelink in `$target[1]`. This
+  function is expected to return an html fragment (most likely a link,
+  but it wouldn't have to be a link). If your plugin is not using
+  'replacement,' then the 'callback' element is *required.*
+
+So, a simple freelinking plugin only needs to include this array. Here's
+our entire example:
+    $freelinking['mike'] => array(
+      'indicator' => '/mike/',
+      'translate' => array(' ' => '-'),
+      'replacement' => 'http://example.com/mike/%1',
+    );
+
+And that could be the entire (not counting comments, of course)
+freelinking_mike.inc file. The example plugin
+"freelining_drupalproject.inc" is a simple plugin of this type:
+    $freelinking['drupalproject'] => array(
+      'indicator' => '/d(rupal)?project/',
+      'translate' => array(' ' => '_'),
+      'replacement' => 'http://drupal.org/project/%1',
+    );
+
+### More complex plugins
+
+The 'callback' element of your $freelinking['plugin'] array can define a
+php function that will be used to create the link. This function will
+get the entire match that the module found for its link, and is expected
+to return a link. Freelinking will make the substition based on the
+return value of this function. 
+
+The callback function should have the name
+"freelinking_<plugin>_callback", though that name is not enforced by the
+freelinking module. Drupal likes modules to keep their functions within
+their own namespaces, so the safest solution is to stick to this naming
+convention.
+
+Two plugins that ship with freelinking use the callback, which you can
+use as examples.
+
+* freelinking_drupalorgnid.inc  
+  This plugin turns freelinks like [[donid:17570]] into "Drupal.org:
+  Branches", which is linked to the node by nid. This plugin uses the
+  callback function to do a `drupal_http_request` to find the title of
+  the page. Therefore, this plugin can be used as an example to
+  manipulate the link text.
+
+* freelinking_nodetitle.inc  
+  This plugin mimics the behavior of previous versions of freelinking.
+  It attempts to find a node on the system with the same title as the
+  target, and either creates a link to that content, or a link to a node
+  creation form to create that content. This plugin can be used as an
+  example to manipulate the link target.
+
+### Settings
+
+If your plugin will require some settings, they can be defined in a
+"freelinking_<plugin>_settings" function in your include file. This
+function should return a Drupal FormAPI array of the various settings
+your plugin will need. The freelinking module will add these form
+controls to the settings page (admin/settings/freelinking). Your plugin
+can use these settings in the $freelinking array, or the callback
+function, as necessary.
+
+A simple example of using settings is the wikipedia plugin,
+'freelinking_wikipedia.inc.' It uses one setting to control the language
+code that the URL should use. The setting is used in the
+$freelinking['wikipedia']['replacement'] element, using the language
+code as part of the URL.
+
+The 'freelinking_nodetitle.inc' plugin also uses the settings array,
+again mimicing the behavior of previous versions of freelinking. This
+plugin has settings to control what happens when a link cannot be found,
+and is able to restrict the lookup of content to certain content types.
+This is an example of using settings within the callback function.
+
+---
+freelining.module by ea. Farris <eafarris@gmail.com>
+$Id$
+vim: tw=72 syn=mkd
