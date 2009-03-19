@@ -1,10 +1,8 @@
-; $Id$
+; $Id$ ;
 name = Freelinking
-description = Wiki-style freelinking for node content using CamelCase and delimiters.
-
-; Information added by drupal.org packaging script on 2008-03-18
-version = "6.x-1.2"
-core = "6.x"
-project = "freelinking"
-datestamp = "1205848814"
+description = A filter that allows flexible linking of content
+package = Input filters
+core =6.x
+dependencies[] = filter
+dependencies[] = prepopulate
 
