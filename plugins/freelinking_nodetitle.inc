@@ -15,7 +15,7 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
   $sql = 'SELECT nid FROM {node} WHERE title = "%s" ';
   if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') { // restrict title search to a content type
     $sql .= 'AND type ="%s"';
-    $result = db_query($sql, $target[1], variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
+    $result = db_query($sql, $target[1], variable_get('freelinking_nodetitle_searchcontenttype', 'none'), 'none');
   } // endif title search restriction
   else {
     $result = db_query($sql, $target[1]);
