@@ -20,7 +20,7 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '', $langcode
     case 'process':
       _freelinking_include_all_plugins();
       // Handle default freelinks first
-      $regex = '/\[\[([^:]+)]]/Uu'; // find freelinks that don't contain a colon
+      $regex = '/[^\\\\]\[\[([^:]+)]]/Uu'; // find freelinks that don't contain a colon
       preg_match_all($regex, $text, $defaultmatches, PREG_SET_ORDER);
       $defaultplugin = variable_get('freelinking_default', 'nodetitle');
       foreach ($defaultmatches as $match) { // loop through default matches
@@ -36,13 +36,13 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '', $langcode
           $text = preg_replace($pattern, $replacement, $text);
         }
         elseif ($freelinking[$defaultplugin]['callback']) { // uses a callback function
-          $pattern = '/\[\[(' . $match[1] . ')]]/'; // have to capture the match in the pattern for the array passed to the callback
+          $pattern = '/[^\\\\]\[\[(' . $match[1] . ')]]/'; // have to capture the match in the pattern for the array passed to the callback
           $text = preg_replace_callback($pattern, $freelinking[$defaultplugin]['callback'], $text);
         }
       } // endforeach looping through default matches
 
       // Handle regular format freelinks
-      $regex = '/\[\[(.+):(.+)]]/Uu';
+      $regex = '/[^\\\\]\[\[(.+):(.+)]]/Uu';
       $stuff_to_do = preg_match_all($regex, $text, $pregmatches, PREG_PATTERN_ORDER); // scarf all into $matches
       if ($stuff_to_do) { // there was at least one hit on our regex
         $matches = array_merge($pregmatches[1], $pregmatches[2]);
