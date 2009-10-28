@@ -8,7 +8,7 @@
 // A "could not find nid" message is displayed if the nid could not be found.
 
 $freelinking['nid'] = array(
-  'indicator' => '/(n(id|ode)?)/',
+  'indicator' => '/(n(id|ode)?)$/',
   'callback' => 'freelinking_nid_callback',
   'run on view' => TRUE,
 );

@@ -29,6 +29,10 @@ plugin. For example, a "Freelinking Mike" module might return the array
   Freelinking uses the colon (":") as the separator between the
   indicator and the link text. It should not be part of the indicator
   string. The indicator string is *required*.
+  
+  It is a good idea to end the indicator expression with the "$" symbol
+  indicating the end of a line. This helps prevent collision with other
+  indicators that are supersets of the one you create.
 
 * 'translate'  
   This is an array of characters that can be used to translate
