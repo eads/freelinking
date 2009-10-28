@@ -1,7 +1,9 @@
 <?php
 // freelinking3 -- flexible linking of content
 
-function freelinking_filter($op, $delta = 0, $format = -1, $text = '', $langcode = '', $cache_id = 0) {
+function freelinking_filter($op, $delta = 0, $format = -1,
+  $text = '', $langcode = '', $cache_id = 0) {
+
   switch ($op) {
     case 'list':
       return array(0 => 'freelinking filter');
@@ -12,51 +14,75 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '', $langcode
     case 'process':
       $freelinking = _freelinking_get_plugins();
 
-      // Handle default freelinks first
-      $regex = '/[^\\\\]\[\[([^:]+)]]/Uu'; // find freelinks that don't contain a colon
+      // Handle default freelinks first (no colon)
+      $regex = '/[^\\\\]\[\[([^:]+)]]/Uu';
       preg_match_all($regex, $text, $defaultmatches, PREG_SET_ORDER);
       $defaultplugin = variable_get('freelinking_default', 'nodetitle');
-      foreach ($defaultmatches as $match) { // loop through default matches
-        if ($freelinking[$defaultplugin]['translate']) { // run the default text through tr
+
+      // loop through default matches
+      foreach ($defaultmatches as $match) {
+        if ($freelinking[$defaultplugin]['translate']) {
+          // run the default text through tr
           $new = strtr($match[1], $freelinking[$defaultplugin]['translate']);
         }
         else {
           $new = $match[1];
         }
-        if ($freelinking[$defaultplugin]['replacement']) { // just a replacement pattern
+
+        // process the replacement pattern
+        if ($freelinking[$defaultplugin]['replacement']) {
           $pattern = '/' . preg_quote($match[0]) . '/';
-          $replacement = '<a href="' . preg_replace('/%1/', $new, $freelinking[$defaultplugin]['replacement']) . '">' . $match[1] . '</a>';
+          $replacement = '<a href="'
+            . preg_replace('/%1/', $new,
+              $freelinking[$defaultplugin]['replacement'])
+            . '">' . $match[1] . '</a>';
           $text = preg_replace($pattern, $replacement, $text);
         }
-        elseif ($freelinking[$defaultplugin]['callback']) { // uses a callback function
-          $pattern = '/[^\\\\]\[\[(' . $match[1] . ')]]/'; // have to capture the match in the pattern for the array passed to the callback
-          $text = preg_replace_callback($pattern, $freelinking[$defaultplugin]['callback'], $text);
+        // uses a callback function
+        elseif ($freelinking[$defaultplugin]['callback']) {
+          // capture the match for replacement callback.
+          $pattern = '/[^\\\\]\[\[(' . $match[1] . ')]]/';
+          $text = preg_replace_callback($pattern,
+            $freelinking[$defaultplugin]['callback'], $text);
         }
       } // endforeach looping through default matches
 
-      // Handle regular format freelinks
+      // Handle regular format (non-default) freelinks
       $regex = '/[^\\\\]\[\[(.+):(.+)]]/Uu';
-      $stuff_to_do = preg_match_all($regex, $text, $pregmatches, PREG_PATTERN_ORDER); // scarf all into $matches
-      if ($stuff_to_do) { // there was at least one hit on our regex
+      $stuff_to_do = preg_match_all($regex, $text, $pregmatches,
+        PREG_PATTERN_ORDER); // scarf all into matches
+
+      // there was at least one hit on our regex
+      if ($stuff_to_do) {
         $matches = array_merge($pregmatches[1], $pregmatches[2]);
-        for ($match = 0; $match < $stuff_to_do ; $match++) { // loop through matches
-          $key = $pregmatches[1][$match]; // key is the indicator, value is the target
+        // loop through matches
+        for ($match = 0; $match < $stuff_to_do ; $match++) {
+          // key is the indicator, value is the target
+          $key = $pregmatches[1][$match];
           $value = $pregmatches[2][$match];
           foreach (array_keys($freelinking) as $plugin) {
-            if (preg_match($freelinking[$plugin]['indicator'], $key)) { // got a hit
+            // got a hit
+            if (preg_match($freelinking[$plugin]['indicator'], $key)) {
               $pattern = '/\[\[' . $key . ':(' . $value . ')]]/';
-              if ($freelinking[$plugin]['replacement']) { // It's just a replacement pattern
-                if ($freelinking[$plugin]['translate']) { // there's some prematch tr to do
+              // It's just a replacement pattern
+              if ($freelinking[$plugin]['replacement']) {
+                // there's some prematch tr to do
+                if ($freelinking[$plugin]['translate']) {
                   $new = strtr($value, $freelinking[$plugin]['translate']);
                 } // endif translation to do first
                 else {
                   $new = $value;
                 }
-                $replacement = '<a href="' . preg_replace('/%1/', $new, $freelinking[$plugin]['replacement']) . '">' . $value . '</a>';
+                $replacement = '<a href="'
+                  . preg_replace('/%1/', $new,
+                    $freelinking[$plugin]['replacement'])
+                  . '">' . $value . '</a>';
                 $text = preg_replace($pattern, $replacement, $text);
               } // replacement pattern only
-              elseif ($freelinking[$plugin]['callback']) { // plugin uses a callback function
-                $text = preg_replace_callback($pattern, $freelinking[$plugin]['callback'], $text);
+              // plugin uses a callback function
+              elseif ($freelinking[$plugin]['callback']) {
+                $text = preg_replace_callback($pattern,
+                  $freelinking[$plugin]['callback'], $text);
               } // endifelse plugin uses a callback
             } // endif looking for plugins that match
           } // endforeach looping through plugins
@@ -119,7 +145,8 @@ function freelinking_settings() {
  * Include .inc plugins
  */
 function freelinking_freelinking() {
-  $files = file_scan_directory(drupal_get_path('module', 'freelinking') . '/plugins/', '.inc');
+  $files = file_scan_directory(
+    drupal_get_path('module', 'freelinking') . '/plugins/', '.inc');
   foreach($files as $absolute => $file) {
     require $absolute;
   }
