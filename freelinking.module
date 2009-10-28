@@ -21,29 +21,11 @@ function freelinking_filter($op, $delta = 0, $format = -1,
 
       // loop through default matches
       foreach ($defaultmatches as $match) {
-        if ($freelinking[$defaultplugin]['translate']) {
-          // run the default text through tr
-          $new = strtr($match[1], $freelinking[$defaultplugin]['translate']);
-        }
-        else {
-          $new = $match[1];
-        }
-
-        // process the replacement pattern
-        if ($freelinking[$defaultplugin]['replacement']) {
+        $link = freelinking_build_freelink( $freelinking[$defaultplugin],
+          $match[1]);
+        if ($link) {
           $pattern = '/' . preg_quote($match[0]) . '/';
-          $replacement = '<a href="'
-            . preg_replace('/%1/', $new,
-              $freelinking[$defaultplugin]['replacement'])
-            . '">' . $match[1] . '</a>';
-          $text = preg_replace($pattern, $replacement, $text);
-        }
-        // uses a callback function
-        elseif ($freelinking[$defaultplugin]['callback']) {
-          // capture the match for replacement callback.
-          $pattern = '/[^\\\\]\[\[(' . $match[1] . ')]]/';
-          $text = preg_replace_callback($pattern,
-            $freelinking[$defaultplugin]['callback'], $text);
+          $text = preg_replace($pattern, $link, $text);
         }
       } // endforeach looping through default matches
 
@@ -55,35 +37,22 @@ function freelinking_filter($op, $delta = 0, $format = -1,
       // there was at least one hit on our regex
       if ($stuff_to_do) {
         $matches = array_merge($pregmatches[1], $pregmatches[2]);
+
         // loop through matches
         for ($match = 0; $match < $stuff_to_do ; $match++) {
-          // key is the indicator, value is the target
-          $key = $pregmatches[1][$match];
-          $value = $pregmatches[2][$match];
+          $indicator = $pregmatches[1][$match];
+          $target = $pregmatches[2][$match];
+
+          // find a plugin for the match
           foreach (array_keys($freelinking) as $plugin) {
             // got a hit
-            if (preg_match($freelinking[$plugin]['indicator'], $key)) {
-              $pattern = '/\[\[' . $key . ':(' . $value . ')]]/';
-              // It's just a replacement pattern
-              if ($freelinking[$plugin]['replacement']) {
-                // there's some prematch tr to do
-                if ($freelinking[$plugin]['translate']) {
-                  $new = strtr($value, $freelinking[$plugin]['translate']);
-                } // endif translation to do first
-                else {
-                  $new = $value;
-                }
-                $replacement = '<a href="'
-                  . preg_replace('/%1/', $new,
-                    $freelinking[$plugin]['replacement'])
-                  . '">' . $value . '</a>';
-                $text = preg_replace($pattern, $replacement, $text);
-              } // replacement pattern only
-              // plugin uses a callback function
-              elseif ($freelinking[$plugin]['callback']) {
-                $text = preg_replace_callback($pattern,
-                  $freelinking[$plugin]['callback'], $text);
-              } // endifelse plugin uses a callback
+            if (preg_match($freelinking[$plugin]['indicator'], $indicator)) {
+              $link = freelinking_build_freelink($freelinking[$plugin],
+                $target);
+              if ($link) {
+                $pattern = '/\[\[' . $indicator . ':(' . $target . ')]]/';
+                $text = preg_replace($pattern, $link, $text);
+              }
             } // endif looking for plugins that match
           } // endforeach looping through plugins
         } // endfor looping through matches
@@ -169,6 +138,33 @@ function _freelinking_get_plugins() {
   }
   $freelinking = module_invoke_all('freelinking');
   return $freelinking;
+}
+
+/**
+ * Construct a link out of the $target by the plugin definition
+ */
+function freelinking_build_freelink($plugin, $target) {
+  // run the text through translation
+  if ($plugin['translate']) {
+    $target = strtr($target, $plugin['translate']);
+  }
+
+  // process simple replacement plugins
+  if ($plugin['replacement']) {
+    // %1 is the token all freelinking replacement strings must include
+    $t_url = preg_replace('/%1/', $target, $plugin['replacement']);
+    return l($target, $t_url,
+      array('class' => 'freelink ' . $plugin, 'title' => $t_url));
+  }
+  // process replacement callback
+  // arguments to callbacks consistent from use of preg_replace_callback
+  if (function_exists($plugin['callback'])) {
+    return calL_user_func_array($plugin['callback'],
+      array(array(0 => '', 1 => $target)));
+  }
+
+  // if callback does not exist do not replace
+  return FALSE;
 }
 
 // vim: tw=300 nowrap syn=php
