@@ -1,16 +1,22 @@
 <?php
-// nodetitle plugin for freelinking
 
-// allows for a link like [[nodetitle:Freelinking filter]] to be expanded to
-// a link to the node titled "Freelinking filter" or a link to create
-// the node.
+/**
+ * Nodetitle plugin for Freelinking
+ * allows for a link like [[nodetitle:Freelinking filter]] to be expanded to
+ * a link to the node titled "Freelinking filter" or a link to create
+ * the node.
+ */
 
 $freelinking['nodetitle'] = array(
   'indicator' => '/n(t|odetitle)/',
   'callback' => 'freelinking_nodetitle_callback',
   'run on view' => TRUE,
+  'settings' => 'freelinking_nodetitle_settings'
 );
 
+/**
+ * Replacement callback for freelinking_freelinking()
+ */
 function freelinking_nodetitle_callback($target) { // resolve $target into a link to the node or a create link
   $sql = 'SELECT nid FROM {node} WHERE title = "%s" ';
   if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') { // restrict title search to a content type
@@ -23,7 +29,7 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
   while ($node = db_fetch_object($result)) { // should be only one
     $nid = $node->nid;
   } // endwhile looping through (one) node
-  
+
   if ($nid) { // I got your freelink right here
     $replacement =  l($target[1], 'node/' . $nid, array(
       'attributes' => array('class' => 'freelink',),
@@ -41,7 +47,7 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
         ));
     } // endif create
     else { // either no create action or no access rights, so search
-      $replacement = l($target[1], 'search/node/' . $target[1], array(
+      $replacement = l($target[1], 'search/node/' . $target['destination'], array(
         'attributes' => array(
           'class' => 'freelink notfound freelink-search',
           'title' => 'Search this site for content like "' . $target[1] . '"',
@@ -52,23 +58,26 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
   return $replacement;
 }
 
+/**
+ * Nodetitle Settings Callback
+ */
 function freelinking_nodetitle_settings() { // settings for the nodetitle plugin
-  $form['freelinking_nodetitle_newcontenttype'] = array(
+  $form['nodetitle']['freelinking_nodetitle_newcontenttype'] = array(
     '#title' => t('Default for new content'),
     '#type'  => 'select',
     '#options' => node_get_types('names'),
     '#default_value' => variable_get('freelinking_nodetitle_newcontenttype', 'story'),
     '#description'  => t('Content that is to be created from a freelink should be of this type.'),
   );
-  $form['freelinking_nodetitle_searchcontenttype'] = array(
+  $form['nodetitle']['freelinking_nodetitle_searchcontenttype'] = array(
     '#title' => t('Restrict freelinks to this content type'),
     '#type'  => 'select',
     '#options' => array_merge(array('none' => t('No restriction')), node_get_types('names')),
     '#default_value' => variable_get('freelinking_nodetitle_searchcontenttype', 'none'),
     '#description' => t('Lookup by title to find a freelink will be restricted to this content type only.'),
   );
-  $form['freelinking_nodetitle_notfoundaction'] = array(
-    '#title' => t('If a suitable content is not found:'),
+  $form['nodetitle']['freelinking_nodetitle_notfoundaction'] = array(
+    '#title' => t('If a suitable content is not found'),
     '#type' => 'select',
     '#options' => array(
       'create' => t('Only try to create content. Do not search for content. May give a 403 if the user does not have permission'),
@@ -78,9 +87,7 @@ function freelinking_nodetitle_settings() { // settings for the nodetitle plugin
     '#default_value' => variable_get('freelinking_nodetitle_notfoundaction', 'create'),
     '#description' => t('What should freelinking do when content to link to is not found?'),
   );
-  
   return $form;
-} // endfunction freelinking_nodetitle_settings()
+} // endfunction freelinking_freelinking_settings()
 
-// vim:tw=300 nowrap syn=php
-
+// vim: tw=300 nowrap syn=php

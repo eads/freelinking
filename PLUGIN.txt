@@ -1,30 +1,25 @@
 # Plugins for Freelining 3
 ---
 
-Freelinking 3 uses a plugin system to enhance the freelinking syntax and
-enable different kinds of free linking. Plugins can be simple URL
-constructors, or can use more sophisticated methods and have complete
-control over the link and target text. Plugins are small include files
-that live in the plugins/ directory under the freelinking module's
-directory.
+Freelinking 3 uses a plugin system to enhance the freelinking syntax 
+and enable different kinds of free linking. Plugins can be simple URL 
+constructors, or can use more sophisticated methods and have complete 
+control over the link and target text. Plugins are modules or include 
+files that can be created as individual Drupal projects, added as 
+integration functionality to an existing module, be a dedicated 
+sub-module of Freelinking, or simply be a drop-in ".inc" file in 
+Freelinking's plugins directory. A single Freelinking plugin module 
+can provide multiple plugins.
 
 ## Format of a Freelinking 3 plugin
-
-Freelinking 3 plugins are PHP include files, whose name starts with
-"freelinking_" and ends with the extension ".inc". For example, if you
-wish to write a plugin called "mike," the file's name would be
-"freelinking_mike.inc" and it would live in the plugins/ directory under
-the freelinking module's directory.
-
-A FL3 plugin only has one requirement: it must add an element to the
-$freelinking global array. 
+A Freelinking 3 module needs only to implement hook_freelinking().
+Freelinking takes the results of hook_freelinking() and builds a two
+dimensional array of all available plugins.
 
 ### The $freelinking array
-
 Your plugin's element in the $freelinking array is named after your
-plugin. In the example above of a plugin called "mike," the element your
-plugin would add to the array would be `$freelinking['mike']`. Your
-element defines an array, with the following elements:
+plugin. For example, a "Freelinking Mike" module might return the array 
+`$freelinking['mike']`. Your freelinking array has the following elements:
 
 * 'indicator'  
   The indicator is a string that defines a regular expression that will
@@ -63,22 +58,46 @@ element defines an array, with the following elements:
   but it wouldn't have to be a link). If your plugin is not using
   'replacement,' then the 'callback' element is *required.*
 
-So, a simple freelinking plugin only needs to include this array. Here's
+So, a simple freelinking plugin only needs to return this array. Here's
 our entire example:
+  function freelinking_mike_freelinking() {
     $freelinking['mike'] => array(
       'indicator' => '/mike/',
       'translate' => array(' ' => '-'),
       'replacement' => 'http://example.com/mike/%1',
     );
+    return $freelinking;
+  }
 
 And that could be the entire (not counting comments, of course)
-freelinking_mike.inc file. The example plugin
-"freelining_drupalproject.inc" is a simple plugin of this type:
+freelinking_mike.module file. The example plugin
+"freelining_drupalproject.module" is a simple plugin of this type:
+  function freelinking_drupalproject_freelinking() {
     $freelinking['drupalproject'] => array(
       'indicator' => '/d(rupal)?project/',
       'translate' => array(' ' => '_'),
       'replacement' => 'http://drupal.org/project/%1',
     );
+}
+
+### freelinking_<plugin>.inc
+You may also create a plugin by creating a simple include file
+in the plugins directory inside the Freelinking module. This plugin
+needs to define the same array as would be in hook_freelinking(), as
+well as any callback replacement or settings functions.
+
+These plugins will automatically be included by Freelinking.
+
+Any array defined outside the hook function:
+  $freelinking['drupalproject'] => array(
+    'indicator' => '/d(rupal)?project/',
+    'translate' => array(' ' => '_'),
+    'replacement' => 'http://drupal.org/project/%1',
+  );
+
+This is the original functionality of Freelinking 3, and has been 
+preserved for easier migration and simple experimentation with plugin
+creation.
 
 ### More complex plugins
 
@@ -94,17 +113,24 @@ freelinking module. Drupal likes modules to keep their functions within
 their own namespaces, so the safest solution is to stick to this naming
 convention.
 
-Two plugins that ship with freelinking use the callback, which you can
+Two submodules that ship with freelinking use the callback, which you can
 use as examples.
 
-* freelinking_drupalorgnid.inc  
+* freelinking_drupalorgnid
   This plugin turns freelinks like [[donid:17570]] into "Drupal.org:
   Branches", which is linked to the node by nid. This plugin uses the
   callback function to do a `drupal_http_request` to find the title of
   the page. Therefore, this plugin can be used as an example to
   manipulate the link text.
 
-* freelinking_nodetitle.inc  
+* freelinking_nid
+  This plugin turns freelinks like [[nid:123]] into an internal link
+  with the title of your local node #123.
+
+Also, the freelinking_nodetitle.inc file defines freelinking's own
+nodetitle plugin implementation, which also uses a callback:
+
+* freelinking_nodetitle
   This plugin mimics the behavior of previous versions of freelinking.
   It attempts to find a node on the system with the same title as the
   target, and either creates a link to that content, or a link to a node
@@ -113,26 +139,33 @@ use as examples.
 
 ### Settings
 
-If your plugin will require some settings, they can be defined in a
-"freelinking_<plugin>_settings" function in your include file. This
-function should return a Drupal FormAPI array of the various settings
-your plugin will need. The freelinking module will add these form
-controls to the settings page (admin/settings/freelinking). Your plugin
-can use these settings in the $freelinking array, or the callback
-function, as necessary.
+If your plugin will require some settings, they can be defined in a 
+callback function of your plugin's freelinking array:
 
-A simple example of using settings is the wikipedia plugin,
-'freelinking_wikipedia.inc.' It uses one setting to control the language
-code that the URL should use. The setting is used in the
-$freelinking['wikipedia']['replacement'] element, using the language
+$freelinking[<plugin>]['settings'] = 'freelinking_<plugin>_settings';
+
+Now just implement `freelinking_plugin_settings()`. This function 
+should return a Drupal FormAPI array of the various settings your 
+plugin will need. The freelinking module will add these form controls 
+to the settings page (admin/settings/freelinking). Your plugin can use 
+these settings in the $freelinking array, or the callback function, as 
+necessary.
+
+A simple example of using settings is the wikipedia plugin, 
+'freelinking_wikipedia' It uses one setting to control the language 
+code that the URL should use. The setting is used in the 
+$freelinking['wikipedia']['replacement'] element, using the language 
 code as part of the URL.
 
-The 'freelinking_nodetitle.inc' plugin also uses the settings array,
-again mimicing the behavior of previous versions of freelinking. This
-plugin has settings to control what happens when a link cannot be found,
-and is able to restrict the lookup of content to certain content types.
+The 'freelinking_nodetitle' plugin also uses the settings array, again 
+mimicing the behavior of previous versions of freelinking. This plugin 
+has settings to control what happens when a link cannot be found, and 
+is able to restrict the lookup of content to certain content types. 
 This is an example of using settings within the callback function.
 
+If you create an "include file plugin" you do not need to specify
+the name of the settings function, instead, you may default to calling
+it `freelinking_<plugin>_settings()`.
 ---
 freelining.module by ea. Farris <eafarris@gmail.com>
 $Id$

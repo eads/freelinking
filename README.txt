@@ -13,7 +13,7 @@ Freelinking 3 breaks from previous versions in some significant ways:
   use a table to keep track of freelinks and their targets.
 * Plugins are available to enhance FL3's functionality. See the
   PLUGINS.TXT file for information on how to write plugins for FL3, and
-  see the plugins/ directory for the shipping plugins.
+  see the plugins/ and modules/ directories for the shipping plugins.
 * Freelinks made with the "nodetitle" plugin (which mimics the behavior
   of previous versions of freelinking) do not run through the
   'freelinking/' namespace.
@@ -23,13 +23,16 @@ Freelinking 3 breaks from previous versions in some significant ways:
 At the first (alpha-1) release, some features are still missing:
 
 * Support for the pipe (|) formatter for separating the link text from
-  the target is missing.
+  the title is missing.
 * There is no consideration for freelinks made with the "nodetitle"
   plugin which did not exist at submission time but have been created
   later. This was the main reason for using the 'freelinking/' namespace
   in previous versions.
 
----
-freelinking.module by ea.Farris <eafarris@gmail.com>
+## Maintainers
+* eafarris <eafarris@gmail.com> (Original Creator)
+* grayside <grayside@gmail.com> 
+
+
 $Id$
 vim: tw=72 syn=mkd

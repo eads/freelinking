@@ -1,5 +1,9 @@
 # CHANGELOG.txt for freelinking.module for Drupal 6, version 3.x.
 
+
+## freelinking-6.x-3.0-alpha2
+
+
 ## freelinking-6.x-3.0-alpha1
 
 * Initial commit of the freelinking 3 series.

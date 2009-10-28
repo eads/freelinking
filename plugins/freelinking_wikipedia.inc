@@ -11,7 +11,7 @@ $freelinking['wikipedia'] = array(
 );
 
 function freelinking_wikipedia_settings() {
-  $form['freelinking_wikipedia_languagecode'] = array(
+  $form['wikipedia']['freelinking_wikipedia_languagecode'] = array(
     '#title' => t('Language code'),
     '#type'  => 'textfield',
     '#default_value' => variable_get('freelinking_wikipedia_languagecode', 'en'),

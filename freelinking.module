@@ -1,15 +1,7 @@
 <?php
 // freelinking3 -- flexible linking of content
 
-function _freelinking_include_all_plugins() {
-  global $freelinking;
-  foreach (glob(drupal_get_path('module', 'freelinking') . '/plugins/*.inc') as $plugin) {
-    include_once($plugin);
-  } // endforeach looping through plugins
-} // endfunction _freelinking_include_all_plugins
-
 function freelinking_filter($op, $delta = 0, $format = -1, $text = '', $langcode = '', $cache_id = 0) {
-  global $freelinking;
   switch ($op) {
     case 'list':
       return array(0 => 'freelinking filter');
@@ -18,7 +10,8 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '', $langcode
     case 'description':
       return t('Allows for a flexible format for linking content');
     case 'process':
-      _freelinking_include_all_plugins();
+      $freelinking = _freelinking_get_plugins();
+
       // Handle default freelinks first
       $regex = '/[^\\\\]\[\[([^:]+)]]/Uu'; // find freelinks that don't contain a colon
       preg_match_all($regex, $text, $defaultmatches, PREG_SET_ORDER);
@@ -27,7 +20,7 @@ function freelinking_filter($op, $delta = 0, $format = -1, $text = '', $langcode
         if ($freelinking[$defaultplugin]['translate']) { // run the default text through tr
           $new = strtr($match[1], $freelinking[$defaultplugin]['translate']);
         }
-        else { 
+        else {
           $new = $match[1];
         }
         if ($freelinking[$defaultplugin]['replacement']) { // just a replacement pattern
@@ -88,18 +81,16 @@ function freelinking_menu() {
 } // endfunction freelinking_menu
 
 function freelinking_settings() {
-  global $freelinking;
-  _freelinking_include_all_plugins();
-
   $form = array();
 
-  foreach (array_keys($freelinking) as $plugin) {
+  foreach(_freelinking_get_plugins() as $plugin => $definition) {
     $available_plugins[$plugin] = $plugin;
-    if (function_exists('freelinking_' . $plugin . '_settings')) { // find plugins with settings
-      $plugin_with_settings[] = $plugin;
-    } // endif plugin has a settings function
-  } // endforeach looping through plugins
+    if (function_exists($definition['settings'])) {
+      $plugin_with_settings[$plugin] = $definition['settings'];
+    }
+  }
 
+  // set the default plugin
   $form['freelinking_default'] = array(
     '#title' => t('Plugin to use when not indicated in the freelink'),
     '#type'  => 'select',
@@ -110,18 +101,47 @@ function freelinking_settings() {
   );
 
   // loop through plugin settings functions, adding a fieldset for each
-  foreach ($plugin_with_settings as $plugin) {
+  foreach ($plugin_with_settings as $plugin=>$callback) {
     $form[$plugin] = array(
-      '#title' => t('Settings for ' . $plugin . ' plugin'),
+      '#title' => t('Settings for !plugin plugin', array('!plugin' => ucfirst($plugin))),
       '#type'  => 'fieldset',
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
      );
-    $form[$plugin]['settings'] = call_user_func('freelinking_' . $plugin . '_settings');
+    $form[$plugin]['settings'] = call_user_func($callback);
   } // endforeach looping through plugins with settings
 
   return system_settings_form($form);
 } // endfunction freelinking_settings (admin settings)
 
+/**
+ * Implementation of hook_freelinking()
+ * Include .inc plugins
+ */
+function freelinking_freelinking() {
+  $files = file_scan_directory(drupal_get_path('module', 'freelinking') . '/plugins/', '.inc');
+  foreach($files as $absolute => $file) {
+    require $absolute;
+  }
+  foreach ($freelinking as $plugin => $definition)
+  {
+    if(!$definition['settings']) {
+      $freelinking[$plugin]['settings'] = 'freelinking_' . $plugin . '_settings';
+    }
+  }
+  return $freelinking;
+}
+
+/**
+ * module_invoke_all once per pageload. May be unnecessary.
+ */
+function _freelinking_get_plugins() {
+  static $freelinking;
+  if($freelinking) {
+    return $freelinking;
+  }
+  $freelinking = module_invoke_all('freelinking');
+  return $freelinking;
+}
 
 // vim: tw=300 nowrap syn=php

@@ -1,6 +1,6 @@
 <?php
 // nid plugin for freelinking
-// Originially by [greyside](http://drupal.org/user/346868)
+// Originially by [grayside](http://drupal.org/user/346868)
 // See http://drupal.org/node/486954
 
 // allows for a link like [[node:<nid>]], [[n:<nid>]], or [[node:<nid>]] to be expanded to
@@ -20,7 +20,7 @@ function freelinking_nid_callback($target) { // resolve $target into a link to t
   while ($node = db_fetch_object($result)) { // should be only one
     $title = $node->title;
   } // endwhile looping through (one) node
-  
+
   if ($title) { // I got your freelink right here
     $replacement =  l($title, 'node/' . $target[1], array(
       'attributes' => array('class' => 'freelink',),
