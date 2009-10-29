@@ -11,7 +11,6 @@ $freelinking['nodetitle'] = array(
   'indicator' => '/n(t|odetitle)/',
   'callback' => 'freelinking_nodetitle_callback',
   'run on view' => TRUE,
-  'settings' => 'freelinking_nodetitle_settings'
 );
 
 /**
