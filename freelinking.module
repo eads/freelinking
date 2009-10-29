@@ -13,50 +13,38 @@ function freelinking_filter($op, $delta = 0, $format = -1,
       return t('Allows for a flexible format for linking content');
     case 'process':
       $freelinking = _freelinking_get_plugins();
-
-      // Handle default freelinks first (no colon)
-      $regex = '/[^\\\\]\[\[([^:]+)]]/Uu';
-      preg_match_all($regex, $text, $defaultmatches, PREG_SET_ORDER);
+      $freelink_patterns = _freelinking_regex_patterns();
       $defaultplugin = variable_get('freelinking_default', 'nodetitle');
 
-      // loop through default matches
-      foreach ($defaultmatches as $match) {
-        $link = freelinking_build_freelink( $freelinking[$defaultplugin],
-          $match[1]);
-        if ($link) {
-          $pattern = '/' . preg_quote($match[0]) . '/';
-          $text = preg_replace($pattern, $link, $text);
-        }
-      } // endforeach looping through default matches
-
-      // Handle regular format (non-default) freelinks
-      $regex = '/[^\\\\]\[\[(.+):(.+)]]/Uu';
-      $stuff_to_do = preg_match_all($regex, $text, $pregmatches,
-        PREG_PATTERN_ORDER); // scarf all into matches
-
-      // there was at least one hit on our regex
-      if ($stuff_to_do) {
-        $matches = array_merge($pregmatches[1], $pregmatches[2]);
-
-        // loop through matches
-        for ($match = 0; $match < $stuff_to_do ; $match++) {
-          $indicator = $pregmatches[1][$match];
-          $target = $pregmatches[2][$match];
-
-          // find a plugin for the match
-          foreach (array_keys($freelinking) as $plugin) {
-            // got a hit
-            if (preg_match($freelinking[$plugin]['indicator'], $indicator)) {
-              $link = freelinking_build_freelink($freelinking[$plugin],
-                $target);
-              if ($link) {
-                $pattern = '/\[\[' . $indicator . ':(' . $target . ')]]/';
-                $text = preg_replace($pattern, $link, $text);
+      // Loop through every freelink format
+      foreach($freelink_patterns as $regex) {
+        $current_plugin = '';
+        preg_match_all($regex['pattern'], $text, $matches, PREG_SET_ORDER);
+        foreach($matches as $match) {
+          // default freelink (no colon)
+          if(strpos($match[1], ':') === FALSE) {
+            $current_plugin = $defaultplugin;
+            $target = $match[1];
+          } // end default freelink
+          else {
+            list($indicator, $target) = explode(':', $match[1]);
+            // find a plugin for the match
+            foreach(array_keys($freelinking) as $plugin) {
+              if(preg_match($freelinking[$plugin]['indicator'], $indicator)) {
+                $current_plugin = $plugin;
               }
-            } // endif looking for plugins that match
-          } // endforeach looping through plugins
-        } // endfor looping through matches
-      } // endif $stuff to do
+            }// end looping through plugins
+          } // end non-default freelinks
+          $link = freelinking_build_freelink($freelinking[$current_plugin],
+            $target, $regex['mode']);
+          if (!$regex['mode']) {
+            $text = str_replace($match[0], ' ' . $link, $text);
+          }
+          else {
+            $text = str_replace($match[1], ' ' . $link, $text);
+          }
+        } // end looping through matches
+      } // end looping through freelink formats
       return $text;
     case 'prepare':
     default:
@@ -143,28 +131,90 @@ function _freelinking_get_plugins() {
 /**
  * Construct a link out of the $target by the plugin definition
  */
-function freelinking_build_freelink($plugin, $target) {
+function freelinking_build_freelink($plugin, $target, $mode = NULL) {
+  // by default return false so no replacement happens
+  $link = FALSE;
+
+  $target = freelinking_parse_target($target);
   // run the text through translation
   if ($plugin['translate']) {
-    $target = strtr($target, $plugin['translate']);
+    $target[1] = strtr($target[1], $plugin['translate']);
   }
 
   // process simple replacement plugins
   if ($plugin['replacement']) {
     // %1 is the token all freelinking replacement strings must include
-    $t_url = preg_replace('/%1/', $target, $plugin['replacement']);
-    return l($target, $t_url,
-      array('class' => 'freelink ' . $plugin, 'title' => $t_url));
+    $t_url = preg_replace('/%1/', $target[1], $plugin['replacement']);
+    $tooltip = $target[2] ? $target[2] : $t_url;
+    if(!$mode) {
+      $link = l($target[0], $t_url,
+        array('class' => 'freelink ' . $plugin, 'title' => $tooltip));
+    }
+    else {
+      $link = $t_url;
+    }
   }
   // process replacement callback
   // arguments to callbacks consistent from use of preg_replace_callback
   if (function_exists($plugin['callback'])) {
-    return calL_user_func_array($plugin['callback'],
-      array(array(0 => '', 1 => $target)));
+    $link =  calL_user_func_array($plugin['callback'],
+      array($target));
+
+    if (!$mode && is_array($link)) {
+      $link = call_user_func_array('l', $link);
+    }
+    else if ($mode) {
+      $link = is_array($link) ? $link[1] : FALSE;
+    }
   }
 
   // if callback does not exist do not replace
-  return FALSE;
+  return $link;
+}
+
+/**
+ * Parse target for secondary link arguments.
+ * This is raw user input and needs to be checked by the HTML Filter.
+ */
+function freelinking_parse_target($target, $separator = NULL) {
+  if (!$separator) {
+    $separator = '|';
+  }
+  $args = array();
+  $args[0] = $target;
+  $args = array_merge($args, explode('|', $target));
+  return $args;
+}
+
+
+/**
+ * Collect freelink format patterns for filtering.
+ */
+function _freelinking_regex_patterns($separator = NULL) {
+  if (!$separator) {
+    $separator = ':';
+  }
+  $separator = preg_quote($separator);
+  $regex = array();
+
+  // standard freelink syntax
+  $regex[] = array(
+    'pattern' => '/[^\\\\]\[\[(.+' . $separator . '?.+)]]/Uu',
+  );
+
+  // markdown support
+  if (module_exists('markdown')) {
+    $regex[] = array(
+      'pattern' => '/[^\\\\]\[.+\]\((.+' . $separator . '.+)\)/Uu',
+      'mode' => 'url',
+    );
+    $regex[] = array(
+      'pattern' => '/\n[^\\\\]\s\s+\[.+\]' . $separator . '\s+(.+:.+)\n/Uu',
+      'mode' => 'url',
+    );
+  }
+
+  return $regex;
 }
 
 // vim: tw=300 nowrap syn=php

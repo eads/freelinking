@@ -82,17 +82,37 @@ freelinking_mike.inc file. The example plugin
 
 ### More complex plugins
 
-The 'callback' element of your $freelinking['plugin'] array can define a
-php function that will be used to create the link. This function will
-get the entire match that the module found for its link, and is expected
-to return a link. Freelinking will make the substition based on the
-return value of this function. 
+The 'callback' element of your $freelinking['plugin'] array can define a 
+php function that will be used to create the link. This function will get 
+the target value for the link, and is expected to return a link. 
+Freelinking will make the substition based on the return value of this 
+function.
 
-The callback function should have the name
-"freelinking_<plugin>_callback", though that name is not enforced by the
-freelinking module. Drupal likes modules to keep their functions within
-their own namespaces, so the safest solution is to stick to this naming
-convention.
+By default, the target value passed to the callback function looks like so:
+
+  Array(
+    0 => <target>,
+    1 => <target>,
+  );
+
+However, if the text uses pipes ("|"), it will interpret that somewhat 
+further. If the text uses "|"'s in the syntax, there are further nuances. 
+As of now, this is intended usage:
+
+  Array(
+    0 => <target match>,
+    1 => <destination>,
+    2 => <link text>,
+    3 => <tool tip/title attribute>,
+    4+ => miscellnaeous arguments,
+  );
+
+The user syntax is thus: [[indicator:target|title|tooltip(arg1|arg2|...)]]
+
+The callback function should have the name "freelinking_<plugin>_callback", 
+though that name is not enforced by the freelinking module. Drupal likes 
+modules to keep their functions within their own namespaces, so the safest 
+solution is to stick to this naming convention.
 
 Two plugins that ship with freelinking use the callback, which you can
 use as examples.

@@ -22,8 +22,14 @@ function freelinking_nid_callback($target) { // resolve $target into a link to t
   } // endwhile looping through (one) node
 
   if ($title) { // I got your freelink right here
+    $title = $target[2] ? $target[2] : $title;
+    $tooltip = $target[3] ? $target[3] : $title;
+
     $replacement =  l($title, 'node/' . $target[1], array(
-      'attributes' => array('class' => 'freelink',),
+      'attributes' => array(
+        'class' => 'freelink',
+        'title' => $tooltip,
+      ),
     ));
   } // endif a title was found matching the target
   else { // Didn't find one. goto fail.

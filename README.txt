@@ -19,11 +19,11 @@ Freelinking 3 breaks from previous versions in some significant ways:
   'freelinking/' namespace.
 * FL3 requires the [prepopulate](http://drupal.org/project/prepopulate)
   module for its "nodetitle" plugin.
+* FL3 now provides partial support for Markdown syntax, able to process 
+  indicator:target pairs in place of Markdown link URLs.
 
-At the first (alpha-1) release, some features are still missing:
+As of Alpha-3, some features are still missing:
 
-* Support for the pipe (|) formatter for separating the link text from
-  the title is missing.
 * There is no consideration for freelinks made with the "nodetitle"
   plugin which did not exist at submission time but have been created
   later. This was the main reason for using the 'freelinking/' namespace
