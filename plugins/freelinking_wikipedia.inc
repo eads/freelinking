@@ -7,14 +7,14 @@
 $freelinking['wikipedia'] = array(
   'indicator' => '/w(iki(pedia)?|p)?/',
   'translate' => array(' ' => '_'),
-  'replacement' => 'http://' . variable_get('freelinking_wikipedia_languagecode', 'en') . '.wikipedia.org/wiki/%1',
+  'replacement' => 'http://' . variable_get('freelinking_wiki_languagecode', 'en') . '.wikipedia.org/wiki/%1',
 );
 
 function freelinking_wikipedia_settings() {
   $form['wikipedia']['freelinking_wikipedia_languagecode'] = array(
     '#title' => t('Language code'),
     '#type'  => 'textfield',
-    '#default_value' => variable_get('freelinking_wikipedia_languagecode', 'en'),
+    '#default_value' => variable_get('freelinking_wiki_languagecode', 'en'),
     '#description' => t('Enter the two-character language code to use for wikipedia links'),
     '#size' => 2,
     '#maxlength' => 2,
