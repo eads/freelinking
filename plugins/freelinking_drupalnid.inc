@@ -5,19 +5,36 @@
 // a link to drupal.org/node/12345
 
 $freelinking['drupalorgnid'] = array(
-  'indicator' => '/d(rupal)?o(rg)?nid/',
+  'indicator' => '/d(rupal)?o(rg)?/',
   'callback' => 'freelinking_drupalorgnid_callback',
 );
 
+
 function freelinking_drupalorgnid_callback($target) { // resolve nid to a node title
   $url = 'http://drupal.org/node/' . $target[1];
-  $result = drupal_http_request($url, array(), 'GET');
-  $found_title = preg_match('/<h1.*>(.*)<\/h1>/', $result->data, $matches);
+  if(variable_get('drupalorgnid_http_request', true)) {
+    $result = drupal_http_request($url, array(), 'GET');
+    $found_title = preg_match('/<h1.*>(.*)<\/h1>/', $result->data, $matches);
+  }
   if ($found_title) { // regex worked to scarf title of page
     $replacement = l('Drupal.org: "' . $matches[1] . '"', $url);
   }
+  else {
+    $replacement = l('Drupal.org Node: ' . $target[1], $url);
+  }
   return $replacement;
 } // endfunction freelinking_drupalorgnid_callback
+
+function freelinking_drupalorgnid_settings() {
+  $form['drupalorgnid']['drupalorgnid_http_request'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Get node title'),
+    '#default_value' => variable_get('drupalorgnid_http_request', true),
+    '#description' => t('Get node title from drupal.org.'),
+  );
+  return $form;
+}
+
 
 // vim:tw=300 nowrap syn=php
 
