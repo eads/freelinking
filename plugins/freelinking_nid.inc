@@ -8,7 +8,7 @@
 // A "could not find nid" message is displayed if the nid could not be found.
 
 $freelinking['nid'] = array(
-  'indicator' => '/(n(id|ode)?)$/',
+  'indicator' => '/(n(id|ode)?)$/A',
   'callback' => 'freelinking_nid_callback',
   'run on view' => TRUE,
 );
@@ -25,7 +25,7 @@ function freelinking_nid_callback($target) { // resolve $target into a link to t
     $title = $target[2] ? $target[2] : $title;
     $tooltip = $target[3] ? $target[3] : $title;
 
-    $replacement =  l($title, 'node/' . $target[1], array(
+    $replacement =  array($title, 'node/' . $target[1], array(
       'attributes' => array(
         'class' => 'freelink',
         'title' => $tooltip,

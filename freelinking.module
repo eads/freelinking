@@ -1,6 +1,17 @@
 <?php
 // freelinking3 -- flexible linking of content
 
+function freelinking_menu() {
+  $items['admin/settings/freelinking'] = array(
+    'title' => 'Freelinking settings',
+    'description' => 'Configure settings for the freelinking input filter',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('freelinking_settings'),
+    'access arguments' => array('administer freelinking'),
+  );
+  return $items;
+} // endfunction freelinking_menu
+
 function freelinking_filter($op, $delta = 0, $format = -1,
   $text = '', $langcode = '', $cache_id = 0) {
 
@@ -12,15 +23,19 @@ function freelinking_filter($op, $delta = 0, $format = -1,
     case 'description':
       return t('Allows for a flexible format for linking content');
     case 'process':
-      $freelinking = _freelinking_get_plugins();
+      $freelinking = freelinking_get_plugins();
       $freelink_patterns = _freelinking_regex_patterns();
       $defaultplugin = variable_get('freelinking_default', 'nodetitle');
 
       // Loop through every freelink format
       foreach($freelink_patterns as $regex) {
-        $current_plugin = '';
-        preg_match_all($regex['pattern'], $text, $matches, PREG_SET_ORDER);
+        preg_match_all($regex['pattern'], ' ' . $text, $matches, PREG_SET_ORDER);
         foreach($matches as $match) {
+          $current_plugin = '';
+
+          // do not strip away first character of match
+          $match[0] = preg_replace('/^[^\\\\]/', '', $match[0]);
+
           // default freelink (no colon)
           if(strpos($match[1], ':') === FALSE) {
             $current_plugin = $defaultplugin;
@@ -35,13 +50,15 @@ function freelinking_filter($op, $delta = 0, $format = -1,
               }
             }// end looping through plugins
           } // end non-default freelinks
-          $link = freelinking_build_freelink($freelinking[$current_plugin],
-            $target, $regex['mode']);
           if (!$regex['mode']) {
-            $text = str_replace($match[0], ' ' . $link, $text);
+            $link = _freelinking_build_freelink($freelinking, $current_plugin,
+              $target, $indicator);
+            $text = str_replace($match[0], $link, $text, $indicator);
           }
           else {
-            $text = str_replace($match[1], ' ' . $link, $text);
+            $link = _freelinking_build_url($freelinking, $current_plugin,
+              $target, $indicator);
+            $text = str_replace($match[1], $link, $text);
           }
         } // end looping through matches
       } // end looping through freelink formats
@@ -52,22 +69,134 @@ function freelinking_filter($op, $delta = 0, $format = -1,
   } // endswitch $op
 } // endfunction freelinking_filter
 
-function freelinking_menu() {
-  $items['admin/settings/freelinking'] = array(
-    'title' => 'Freelinking settings',
-    'description' => 'Configure settings for the freelinking input filter',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('freelinking_settings'),
-    'access arguments' => array('administer freelinking'),
-  );
-  return $items;
-} // endfunction freelinking_menu
+/**
+ * Implementation of hook_freelinking()
+ * Include plugins/*.inc plugins
+ */
+function freelinking_freelinking() {
+  $files = file_scan_directory(
+    drupal_get_path('module', 'freelinking') . '/plugins/', '.inc');
+  foreach($files as $absolute => $file) {
+    require $absolute;
+  }
+  foreach ($freelinking as $plugin => $definition)
+  {
+    if(!$definition['settings']) {
+      $freelinking[$plugin]['settings'] = 'freelinking_' . $plugin . '_settings';
+    }
+  }
+  return $freelinking;
+}
 
+/**
+ * Construct a link out of the $target with the specified plugin
+ */
+function _freelinking_build_freelink($freelinking, $plugin_name, $target, $indicator) {
+  // by default return false so no replacement happens
+  $link = FALSE;
+  $target = freelinking_parse_target($target);
+  $plugin = $freelinking[$plugin_name];
+
+  // run the text through translation
+  if ($plugin['translate']) {
+    $target[1] = strtr($target[1], $plugin['translate']);
+  }
+  // process simple replacement plugins
+  if ($plugin['replacement']) {
+    // %1 is the token all freelinking replacement strings must include
+    $url = preg_replace('/%1/', $target[1], $plugin['replacement']);
+    $tooltip = $target[2] ? $target[2] : $url;
+    $link = l(ucfirst($target[0]), $url,
+      array('class' => 'freelink ' . $plugin, 'title' => $tooltip));
+  }
+  // process replacement callback
+  // arguments to callbacks consistent from use of preg_replace_callback
+  if (function_exists($plugin['callback'])) {
+    $link = call_user_func_array($plugin['callback'],
+      array($target));
+
+    if (is_array($link)) {
+      $url = $link[1];
+      $link = call_user_func_array('l', $link);
+    }
+  }
+
+  // if they are "normal" freelinks add to the unique links list.
+  if ($plugin['block link'] !== FALSE && $url) {
+    freelinking_set_link(array($url, array('link' => $link, 'plugin' => $plugin_name)),
+      strcasecmp($plugin['block link'], 'override') == 0);
+  }
+  // if callback does not exist do not replace
+  return $link;
+}
+
+/**
+ * Construct a link out of the $target with the specified plugin
+ */
+function _freelinking_build_url($freelinking, $plugin_name, $target, $indicator) {
+  // by default return false so no replacement happens
+  $link = FALSE;
+  $plugin = $freelinking[$plugin_name];
+
+  // run the text through translation
+  if ($plugin['translate']) {
+    $target = strtr($target, $plugin['translate']);
+  }
+  // process simple replacement plugins
+  if ($plugin['replacement']) {
+    // %1 is the token all freelinking replacement strings must include
+    $link = preg_replace('/%1/', $target, $plugin['replacement']);
+  }
+  // process replacement callback
+  // arguments to callbacks consistent from use of preg_replace_callback
+  if (function_exists($plugin['callback'])) {
+    $args = array($target, $target);
+    $link = call_user_func_array($plugin['callback'], array($args));
+
+    if(is_array($link)) {
+      $link = $link[1];
+    }
+  }
+  $url = parse_url($link);
+
+  if ($plugin['block link'] !== FALSE && $url) {
+    $ulink = array(freelinking_short_url($url), $link);
+    $ulink = call_user_func_array('l', $ulink);
+    freelinking_set_link(array($link, array('link' => $ulink, 'plugin' => $plugin_name)),
+      strcasecmp($plugin['block link'], 'override') == 0);
+  }
+
+  // without l(), this needs correcting
+  if(!$url['host'] && $link) {
+    $link = '/' . $link;
+  }
+
+  // if callback does not exist do not replace
+  return $link;
+}
+
+/**
+ * Parse target for secondary link arguments.
+ * This is raw user input and needs to be checked by the HTML Filter.
+ */
+function freelinking_parse_target($target, $separator = NULL) {
+  if (!$separator) {
+    $separator = '|';
+  }
+  $args = array();
+  $args[0] = $target;
+  $args = array_merge($args, explode('|', $target));
+  return $args;
+}
+
+/**
+ * Build admin/settings page.
+ */
 function freelinking_settings() {
   $form = array();
 
-  foreach(_freelinking_get_plugins() as $plugin => $definition) {
-    $available_plugins[$plugin] = $plugin;
+  foreach(freelinking_get_plugins() as $plugin => $definition) {
+    $available_plugins[$plugin] = ucfirst($plugin);
     if (function_exists($definition['settings'])) {
       $plugin_with_settings[$plugin] = $definition['settings'];
     }
@@ -98,28 +227,13 @@ function freelinking_settings() {
 } // endfunction freelinking_settings (admin settings)
 
 /**
- * Implementation of hook_freelinking()
- * Include .inc plugins
+ * Freelinking API
  */
-function freelinking_freelinking() {
-  $files = file_scan_directory(
-    drupal_get_path('module', 'freelinking') . '/plugins/', '.inc');
-  foreach($files as $absolute => $file) {
-    require $absolute;
-  }
-  foreach ($freelinking as $plugin => $definition)
-  {
-    if(!$definition['settings']) {
-      $freelinking[$plugin]['settings'] = 'freelinking_' . $plugin . '_settings';
-    }
-  }
-  return $freelinking;
-}
 
 /**
- * module_invoke_all once per pageload. May be unnecessary.
+ * Invoke hook_freelinking() once per page load.
  */
-function _freelinking_get_plugins() {
+function freelinking_get_plugins() {
   static $freelinking;
   if($freelinking) {
     return $freelinking;
@@ -129,63 +243,60 @@ function _freelinking_get_plugins() {
 }
 
 /**
- * Construct a link out of the $target by the plugin definition
+ * Get the current set of unique links.
+ * Takes a string or array as argument.
+ * Will exclude plugins not specified.
+ * "TRUE" will get you an array of just links.
+ * NULL will get you everything.
  */
-function freelinking_build_freelink($plugin, $target, $mode = NULL) {
-  // by default return false so no replacement happens
-  $link = FALSE;
-
-  $target = freelinking_parse_target($target);
-  // run the text through translation
-  if ($plugin['translate']) {
-    $target[1] = strtr($target[1], $plugin['translate']);
+function freelinking_get_links($plugin = NULL) {
+  $links = freelinking_set_link();
+  if ($plugin && $links) {
+    if (!is_array($plugin)) {
+      $plugin = array($plugin);
+    }
+    foreach($links as $link) {
+      if (in_array($link['plugin'], $plugin) || $plugin[0] === TRUE) {
+        $processed[] = $link['link'];
+      }
+    }
+    return $processed;
   }
-
-  // process simple replacement plugins
-  if ($plugin['replacement']) {
-    // %1 is the token all freelinking replacement strings must include
-    $t_url = preg_replace('/%1/', $target[1], $plugin['replacement']);
-    $tooltip = $target[2] ? $target[2] : $t_url;
-    if(!$mode) {
-      $link = l($target[0], $t_url,
-        array('class' => 'freelink ' . $plugin, 'title' => $tooltip));
-    }
-    else {
-      $link = $t_url;
-    }
-  }
-  // process replacement callback
-  // arguments to callbacks consistent from use of preg_replace_callback
-  if (function_exists($plugin['callback'])) {
-    $link =  calL_user_func_array($plugin['callback'],
-      array($target));
-
-    if (!$mode && is_array($link)) {
-      $link = call_user_func_array('l', $link);
-    }
-    else if ($mode) {
-      $link = is_array($link) ? $link[1] : FALSE;
-    }
-  }
-
-  // if callback does not exist do not replace
-  return $link;
+  return $links;
 }
 
 /**
- * Parse target for secondary link arguments.
- * This is raw user input and needs to be checked by the HTML Filter.
+ * If sent a link, process it for the unique links array.
+ * If not sent anything, return the current set of links.
+ * link format:
+ *  '<url>' => array('link' => <link>, 'plugin' => <plugin name>)
  */
-function freelinking_parse_target($target, $separator = NULL) {
-  if (!$separator) {
-    $separator = '|';
+function freelinking_set_link($link = NULL, $override = FALSE) {
+  static $links;
+  if(!$link) {
+    if(empty($links)) {
+      return;
+    }
+    return $links;
   }
-  $args = array();
-  $args[0] = $target;
-  $args = array_merge($args, explode('|', $target));
-  return $args;
+  $index = check_plain($link[0]);
+  // index on destination (url) of the link
+  // if a link already exists and the new link is not overriding, skip.
+  if(!$links[$index] || $override) {
+    $links[$index] = $link[1];
+  }
 }
 
+function freelinking_short_url($url) {
+  if($url['host']) {
+   return '"' . ucfirst(basename($url['path'])) . '" on ' . $url['host'];
+  }
+  return $url['path'];
+}
+
+/**
+ * Helper Functions
+ */
 
 /**
  * Collect freelink format patterns for filtering.

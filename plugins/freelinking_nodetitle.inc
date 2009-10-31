@@ -32,7 +32,7 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
   $title = $target[2] ? $target[2] : $target[1];
   $tooltip = $target[3] ? $target[3] : $title;
   if ($nid) { // I got your freelink right here
-    $replacement =  l($title, 'node/' . $nid, array(
+    $replacement =  array($title, 'node/' . $nid, array(
       'attributes' => array(
         'class' => 'freelink',
         'title' => $tooltip,
@@ -42,7 +42,7 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
   else { // Didn't find one. Present a link to create/do a search
     $notfoundaction = variable_get('freelinking_nodetitle_notfoundaction', 'create');
     if ($notfoundaction == 'create' or ($notfoundaction == 'noaccesssearch' && node_access('create', variable_get('freelinking_nodetitle_newcontenttype', 'story')))) {
-      $replacement = l($target[1], 'node/add/' . variable_get('freelinking_nodetitle_newcontenttype', 'story') , array(
+      $replacement = array($target[1], 'node/add/' . variable_get('freelinking_nodetitle_newcontenttype', 'story') , array(
         'attributes' => array(
           'class' => 'freelink notfound',
           'title' => 'Create content titled "' . $target[1] . '"',
@@ -51,7 +51,7 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
         ));
     } // endif create
     else { // either no create action or no access rights, so search
-      $replacement = l($target[1], 'search/node/' . $target['destination'], array(
+      $replacement = array($target[1], 'search/node/' . $target[1], array(
         'attributes' => array(
           'class' => 'freelink notfound freelink-search',
           'title' => 'Search this site for content like "' . $target[1] . '"',

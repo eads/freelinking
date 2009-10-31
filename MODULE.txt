@@ -45,7 +45,4 @@ plugins. For our example, that would look like this:
     return $freelinking;
   }
 
-Be sure when naming this function to start with your module name, and add 
-another word before "_settings" to avoid triggering the hook_settings drupal 
-function.
-
+Be sure when naming this function to start with your module name as Drupal best practice.
