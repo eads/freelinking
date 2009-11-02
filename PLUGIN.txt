@@ -91,8 +91,8 @@ function.
 By default, the target value passed to the callback function looks like so:
 
   Array(
-    0 => <target>,
-    1 => <target>,
+    'target' => <target>,
+    'dest' => <target>,
   );
 
 However, if the text uses pipes ("|"), it will interpret that somewhat 
@@ -100,11 +100,11 @@ further. If the text uses "|"'s in the syntax, there are further nuances.
 As of now, this is intended usage:
 
   Array(
-    0 => <target match>,
-    1 => <destination>,
-    2 => <link text>,
-    3 => <tool tip/title attribute>,
-    4+ => miscellnaeous arguments,
+    'target' => <target match>,
+    'dest' => <destination>,
+    'text' => <link text>,
+    'tooltip' => <tool tip/title attribute>,
+    'other' => array(<miscellaneous arguments>),
   );
 
 The user syntax is thus: [[indicator:target|title|tooltip(arg1|arg2|...)]]

@@ -14,26 +14,22 @@ $freelinking['nid'] = array(
 );
 
 function freelinking_nid_callback($target) { // resolve $target into a link to the node or display failure
+  if (!is_numeric($target['dest'])) {
+    return t('Invalid Node ID !nid', array('!nid' => $target['dest']));
+  }
   $sql = 'SELECT title FROM {node} WHERE nid = "%s" ';
-  $result = db_query($sql, $target[1]);
+  $result = db_query($sql, $target['dest']);
 
   while ($node = db_fetch_object($result)) { // should be only one
     $title = $node->title;
   } // endwhile looping through (one) node
 
   if ($title) { // I got your freelink right here
-    $title = $target[2] ? $target[2] : $title;
-    $tooltip = $target[3] ? $target[3] : $title;
-
-    $replacement =  array($title, 'node/' . $target[1], array(
-      'attributes' => array(
-        'class' => 'freelink',
-        'title' => $tooltip,
-      ),
-    ));
+    $title = $target['text'] ? $target['text'] : $title;
+    $replacement =  array($title, 'node/' . $target['dest']);
   } // endif a title was found matching the target
   else { // Didn't find one. goto fail.
-    $replacement = '[' . t('Could not find nid') . ' ' . $nid . ']';
+    $replacement = t('Invalid Node ID !nid', array('!nid' => $nid));
   } // endifelse no node found
   return $replacement;
 }

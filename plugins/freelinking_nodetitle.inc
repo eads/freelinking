@@ -14,47 +14,41 @@ $freelinking['nodetitle'] = array(
 );
 
 /**
- * Replacement callback for freelinking_freelinking()
+ * Replacement callback for nodetitle plugin
  */
 function freelinking_nodetitle_callback($target) { // resolve $target into a link to the node or a create link
   $sql = 'SELECT nid FROM {node} WHERE title = "%s" ';
   if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') { // restrict title search to a content type
     $sql .= 'AND type ="%s" ';
-    $result = db_query($sql, $target[1], variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
+    $result = db_query($sql, $target['dest'], variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
   } // endif title search restriction
   else {
-    $result = db_query($sql, $target[1]);
+    $result = db_query($sql, $target['dest']);
   } // endifelse no title search restriction
   while ($node = db_fetch_object($result)) { // should be only one
     $nid = $node->nid;
   } // endwhile looping through (one) node
 
-  $title = $target[2] ? $target[2] : $target[1];
-  $tooltip = $target[3] ? $target[3] : $title;
+  $title = $target['text'] ? $target['text'] : $target['dest'];
   if ($nid) { // I got your freelink right here
-    $replacement =  array($title, 'node/' . $nid, array(
-      'attributes' => array(
-        'class' => 'freelink',
-        'title' => $tooltip,
-      ),
-    ));
+    $replacement =  array($title, 'node/' . $nid);
   } // endif a node was found matching the target
   else { // Didn't find one. Present a link to create/do a search
     $notfoundaction = variable_get('freelinking_nodetitle_notfoundaction', 'create');
     if ($notfoundaction == 'create' or ($notfoundaction == 'noaccesssearch' && node_access('create', variable_get('freelinking_nodetitle_newcontenttype', 'story')))) {
-      $replacement = array($target[1], 'node/add/' . variable_get('freelinking_nodetitle_newcontenttype', 'story') , array(
+      $replacement = array($target['dest'], 'node/add/' . variable_get('freelinking_nodetitle_newcontenttype', 'story') , array(
         'attributes' => array(
-          'class' => 'freelink notfound',
-          'title' => 'Create content titled "' . $target[1] . '"',
+          'class' => 'notfound',
+          'title' => 'Create content titled "' . $target['dest'] . '"',
         ),
-        'query' => array('edit[title]' => $target[1]),
+        'query' => array('edit[title]' => $target['dest']),
         ));
     } // endif create
     else { // either no create action or no access rights, so search
-      $replacement = array($target[1], 'search/node/' . $target[1], array(
+      $replacement = array($target['dest'], 'search/node/' . $target['dest'], array(
         'attributes' => array(
-          'class' => 'freelink notfound freelink-search',
-          'title' => 'Search this site for content like "' . $target[1] . '"',
+          'class' => 'notfound freelink-search',
+          'title' => 'Search this site for content like "' . $target['dest'] . '"',
         ),
       ));
     } // endifelse search

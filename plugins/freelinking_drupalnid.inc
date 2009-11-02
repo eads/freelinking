@@ -11,17 +11,27 @@ $freelinking['drupalorgnid'] = array(
 
 
 function freelinking_drupalorgnid_callback($target) { // resolve nid to a node title
-  $url = 'http://drupal.org/node/' . $target[1];
-  if(variable_get('drupalorgnid_http_request', true)) {
+  if (!is_numeric($target['dest'])) {
+    return t('Invalid Node ID !nid', array('!nid' => $target['dest']));
+  }
+
+  $url = 'http://drupal.org/node/' . $target['dest'];
+  if (!$target['text'] && variable_get('drupalorgnid_http_request', true)) {
     $result = drupal_http_request($url, array(), 'GET');
     $found_title = preg_match('/<h1.*>(.*)<\/h1>/', $result->data, $matches);
+
+    if ($found_title) { // regex worked to scarf title of page
+      $replacement = array('Drupal.org: "' . $matches[1] . '"', $url);
+    }
   }
-  if ($found_title) { // regex worked to scarf title of page
-    $replacement = l('Drupal.org: "' . $matches[1] . '"', $url);
+  else if ($target['text']) {
+    $replacement = array($target['text'], $url);
   }
-  else {
-    $replacement = l('Drupal.org Node: ' . $target[1], $url);
+
+  if (empty($replacement)) {
+    $replacement = array('Drupal.org Node: ' . $target['dest'], $url);
   }
+
   return $replacement;
 } // endfunction freelinking_drupalorgnid_callback
 
