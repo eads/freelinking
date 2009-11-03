@@ -1,5 +1,5 @@
 <?php
-//$Id$
+// $Id$
 /**
  * Freelinking 3
  * Provides flexibe linking of content, wiki-style
@@ -118,15 +118,14 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
     $target['dest'] = strtr($target['dest'], $plugin['translate']);
   }
 
-  // process simple replacement plugins
-  if ($plugin['replacement']) {
+  // process simple replacement plugins if no callback exists
+  if ($plugin['replacement'] && !$plugin['callback']) {
     // %1 is the token all freelinking replacement strings must include
     $url = preg_replace('/%1/', $target['dest'], $plugin['replacement']);
-    $title = $target['text'] ? $target['text'] : $target['dest'];
-    $link = array(ucfirst($title), $url);
+    $link = array('', $url);
   }
+
   // process replacement callback
-  // arguments to callbacks consistent from use of preg_replace_callback
   if (function_exists($plugin['callback'])) {
     $link = call_user_func_array($plugin['callback'],
       array($target));
@@ -136,36 +135,19 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
   if (is_array($link)) {
     drupal_alter('freelink', $link, $target, $plugin, $plugin_name);
     if(is_array($link)) {
-      $url = $link[1];
-      $rendered = call_user_func_array('l', $link);
+      if($link['error']) {
+        $link = $link['error'];
+      }
+      $rendered = theme('freelink', $plugin_name, $link);
     }
+    // the plugin returned a string, just pass it along
     else {
       $rendered = $link;
     }
   }
 
-  // if they are "normal" freelinks add to the unique links list.
-  if ($plugin['unique link'] !== FALSE && $url) {
-    freelinking_set_link(array($url,
-      array('link' => $rendered, 'plugin' => $plugin_name)),
-        strcasecmp($plugin['unique link'], 'override') == 0);
-  }
-  // if callback does not exist do not replace
+  // if empty/false, nothing will happen
   return $rendered;
-}
-
-/**
- * Parse target for secondary link arguments.
- * This is raw user input and needs to be checked by the HTML Filter.
- */
-function freelinking_parse_target($target, $separator = NULL) {
-  if (!$separator) {
-    $separator = '|';
-  }
-  $args = array();
-  $args['target'] = $target;
-  list($args['dest'], $args['text'], $args['tooltip'], $other) = explode('|', $target);
-  return $args;
 }
 
 /**
@@ -175,12 +157,13 @@ function freelinking_parse_target($target, $separator = NULL) {
 function freelinking_freelink_alter(&$link, $target, $plugin, $plugin_name) {
   // not a valid link
   if (!$link[1]) {
-    $link = '<span class="freelink error">[' . t('Invalid Link') . ']</span>';
+    $link['error'] = t('Invalid Link');
+    return;
   }
 
-  // title text is empty, insert some
+  // title text is empty, insert from target or use URL
   if (!$link[0]) {
-    $link[0] = $target['text'] ? $target['text'] : $target['dest'];
+    $link[0] = $target['text'] ? $target['text'] : $link[1];
   }
 
   // support html link text unless plugin overrides
@@ -260,58 +243,57 @@ function freelinking_get_plugins() {
 }
 
 /**
- * Get the current set of unique links.
- * Takes a string or array as argument.
- * Will exclude plugins not specified.
- * "TRUE" will get you an array of just links.
- * NULL will get you everything.
+ * Parse target for secondary link arguments.
+ * This is raw user input and needs to be checked by the HTML Filter.
  */
-function freelinking_get_links($plugin = NULL) {
-  $links = freelinking_set_link();
-
-  if ($plugin && $links) {
-    if (!is_array($plugin)) {
-      $plugin = array($plugin);
-    }
-    foreach($links as $link) {
-      if (in_array($link['plugin'], $plugin) || $plugin[0] === TRUE) {
-        $processed[] = $link['link'];
-      }
-    }
-    $links = $processed;
+function freelinking_parse_target($target, $separator = NULL) {
+  if (!$separator) {
+    $separator = '|';
   }
-  return $links;
+  $args = array();
+  $args['target'] = $target;
+  list($args['dest'], $args['text'], $args['tooltip'], $other) = explode('|', $target);
+  return $args;
 }
 
 /**
- * If sent a link, process it for the unique links array.
- * If not sent anything, return the current set of links.
- * link format:
- *  '<url>' => array('link' => <link>, 'plugin' => <plugin name>)
+ * Theme Functions
  */
-function freelinking_set_link($link = NULL, $override = FALSE) {
-  static $links;
 
-  if(!$link) {
-    if(empty($links)) {
-      return;
-    }
-    return $links;
-  }
-  $index = check_plain($link[0]);
-  // index on destination (url) of the link
-  // if a link already exists and the new link is not overriding, skip.
-  if(!$links[$index] || $override) {
-    $links[$index] = $link[1];
-  }
+/**
+ * Implementation of hook_theme()
+ */
+function freelinking_theme() {
+  return array(
+    'freelink' => array('theme_freelink', 'plugin' => NULL, 'link' => NULL),
+    'freelink_error' => array('theme_freelink', 'plugin' => NULL, 'message' => NULL),
+  );
 }
 
-function freelinking_short_url($url) {
-  if($url['host']) {
-   return '"' . ucfirst(basename($url['path'])) . '" on ' . $url['host'];
+/**
+ * Theme the Freelink
+ */
+function theme_freelink($plugin = NULL, $link= NULL) {
+  if (!is_array($link)) {
+    return theme('freelink_error', $plugin, $link);
   }
-  return $url['path'];
+  if ($link['extra']) {
+    unset($link['extra']);
+  }
+  return call_user_func_array('l', $link);
 }
+
+/**
+ * Theme the error message
+ */
+function theme_freelink_error($plugin = NULL, $message = NULL) {
+  if($message) {
+    $message = ': ' . $message;
+  }
+  return '<code class="freelink freelink-error freelink-$plugin"
+    . " freelink-error-$plugin">[' . t('Bad Link') . $message . ']</code>';
+}
+
 
 /**
  * Helper Functions

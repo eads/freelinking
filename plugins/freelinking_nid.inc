@@ -15,7 +15,8 @@ $freelinking['nid'] = array(
 
 function freelinking_nid_callback($target) { // resolve $target into a link to the node or display failure
   if (!is_numeric($target['dest'])) {
-    return t('Invalid Node ID !nid', array('!nid' => $target['dest']));
+    return array('error' =>
+      t('Invalid Node ID !nid', array('!nid' => $target['dest'])));
   }
   $sql = 'SELECT title FROM {node} WHERE nid = "%s" ';
   $result = db_query($sql, $target['dest']);

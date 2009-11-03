@@ -12,7 +12,8 @@ $freelinking['drupalorgnid'] = array(
 
 function freelinking_drupalorgnid_callback($target) { // resolve nid to a node title
   if (!is_numeric($target['dest'])) {
-    return t('Invalid Node ID !nid', array('!nid' => $target['dest']));
+    return array('error' =>
+      t('Invalid Node ID !nid', array('!nid' => $target['dest'])));
   }
 
   $url = 'http://drupal.org/node/' . $target['dest'];
