@@ -138,22 +138,23 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
   // Standardize link, grab authoritative "structured" version
   // designate the rendered text for display
   if (is_array($link)) {
-    drupal_alter('freelink', $link, $target, $plugin_name, $plugin);
+    if ($link['plugin']) {
+      $target = $link['target'] ? $link['target'] : $target;
+      $target['other']['trace'][] = $plugin_name;
+      unset($plugin);
+      return _freelinking_build_freelink($freelinking, $link['plugin'], $target);
+    }
+    else if ($link['error']) {
+      $link = $link['error'];
+    }
     if (is_array($link)) {
-      if ($link['plugin']) {
-        $target['other']['trace'][] = $plugin_name;
-        unset($plugin);
-        return _freelinking_build_freelink($freelinking, $link['plugin'], $target);
-      }
-      else if ($link['error']) {
-        $link = $link['error'];
-      }
-      $rendered = theme('freelink', $plugin_name, $link);
+      drupal_alter('freelink', $link, $target, $plugin_name, $plugin);
     }
+    $rendered = theme('freelink', $plugin_name, $link);
+  }
+  else {
     // the plugin returned a string, just pass it along
-    else {
-      $rendered = $link;
-    }
+    $rendered = $link;
   }
 
   // if empty/false, nothing will happen
@@ -190,6 +191,20 @@ function freelinking_freelink_alter(&$link, $target, $plugin_name, $plugin) {
   // standard set of CSS classes
   $link[2]['attributes']['class'] = rtrim('freelink freelink-'
     . strtr($plugin_name, ' ', '-') . ' ' . $link[2]['attributes']['class']);
+
+  // There was more than one effort to generate the link
+  if (isset($target['other']['trace'])) {
+    $link[2]['attributes']['class'] .= ' notfound';
+  }
+
+  // Is this an internal or external link?
+  $parts = parse_url($link[1]);
+  if ($parts['host'] && $parts['host'] != $_SERVER['SERVER_NAME']) {
+    $link[2]['attributes']['class'] .= ' freelink-external';
+  }
+  else {
+    $link[2]['attributes']['class'] .= ' freelink-internal';
+  }
 }
 
 /**

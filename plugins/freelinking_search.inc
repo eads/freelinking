@@ -19,14 +19,14 @@ $freelinking['google'] = array(
 function freelinking_search_callback($target) {
   $link = array();
 
-  if (module_exists('search') && user_access('search content')) {
+  if (module_exists('search')) {
     $link[1] = 'search/node/' . $target['dest'];
   }
-  // search does not exist, handle failover
+  // search unavailable exist, handle failover
   else {
     if ($plugin = variable_get('freelinking_search_failover', 'error') == 'error') {
       // send back an error message.
-      return array('error' => t('Search Access Denied'));
+      return array('error' => t('Search Unavailable'));
     }
     else {
       // specify a plugin for next effort
