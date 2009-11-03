@@ -75,6 +75,7 @@ return TRUE;
             }
           }// end looping through plugins
         } // end non-default freelinks
+        $target = freelinking_parse_target($target);
         $link = _freelinking_build_freelink($freelinking, $current_plugin,
           $target);
         $text = str_replace($match[0], $link, $text);
@@ -110,8 +111,12 @@ function freelinking_freelinking() {
  */
 function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
   // by default return false so no replacement happens
-  $target = freelinking_parse_target($target);
-  $plugin = $freelinking[$plugin_name];
+  $plugin =& $freelinking[$plugin_name];
+
+  // if a plugin does not exist, go to failure.
+  if (!$plugin) {
+    return theme('freelink_error', $plugin_name, t('Link Plugin Not Found'));
+  }
 
   // run the text through translation
   if ($plugin['translate']) {
@@ -133,9 +138,14 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
   // Standardize link, grab authoritative "structured" version
   // designate the rendered text for display
   if (is_array($link)) {
-    drupal_alter('freelink', $link, $target, $plugin, $plugin_name);
-    if(is_array($link)) {
-      if($link['error']) {
+    drupal_alter('freelink', $link, $target, $plugin_name, $plugin);
+    if (is_array($link)) {
+      if ($link['plugin']) {
+        $target['other']['trace'][] = $plugin_name;
+        unset($plugin);
+        return _freelinking_build_freelink($freelinking, $link['plugin'], $target);
+      }
+      else if ($link['error']) {
         $link = $link['error'];
       }
       $rendered = theme('freelink', $plugin_name, $link);
@@ -154,7 +164,7 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
  * Implementation of hook_freelink_alter()
  * Used here to clean up and standardize links.
  */
-function freelinking_freelink_alter(&$link, $target, $plugin, $plugin_name) {
+function freelinking_freelink_alter(&$link, $target, $plugin_name, $plugin) {
   // not a valid link
   if (!$link[1]) {
     $link['error'] = t('Invalid Link');

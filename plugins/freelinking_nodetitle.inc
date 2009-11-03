@@ -45,12 +45,7 @@ function freelinking_nodetitle_callback($target) { // resolve $target into a lin
         ));
     } // endif create
     else { // either no create action or no access rights, so search
-      $replacement = array($target['dest'], 'search/node/' . $target['dest'], array(
-        'attributes' => array(
-          'class' => 'notfound freelink-search',
-          'title' => 'Search this site for content like "' . $target['dest'] . '"',
-        ),
-      ));
+      return array('plugin' => 'search');
     } // endifelse search
   } // endifelse no node found
   return $replacement;
@@ -74,14 +69,25 @@ function freelinking_nodetitle_settings() { // settings for the nodetitle plugin
     '#default_value' => variable_get('freelinking_nodetitle_searchcontenttype', 'none'),
     '#description' => t('Lookup by title to find a freelink will be restricted to this content type only.'),
   );
+
+  $failover_option['create'] = t('Add a link to create content. (Without Permission: Access Denied)');
+  if (module_exists('search') && user_access('search content')) {
+    $failover_option['noaccesssearch'] = t('Add a link to create content. (Without Permission: Search Content)');
+    $failover_option['search'] = t('Add a link to Search Content.');
+  }
+  else if ($search_plugin = variable_get('freelinking_search_failover', 'error') != 'error') {
+    $failover_option['noaccesssearch'] =
+      t('Add a link to create content. (Without Permission: %search Search Content)',
+        array('%search' => ucfirst($search_plugin)));
+    $failover_option['search'] = t('Add a link to %search Search Content.',
+      array('%search' => ucfirst($search_plugin)));
+  }
+
+
   $form['nodetitle']['freelinking_nodetitle_notfoundaction'] = array(
     '#title' => t('If a suitable content is not found'),
     '#type' => 'select',
-    '#options' => array(
-      'create' => t('Only try to create content. Do not search for content. May give a 403 if the user does not have permission'),
-      'noaccesssearch' => t('Try to create content, but if the user does not have permission, do a search. Requires search.module'),
-      'search'  => t('Only search for content. Do not try to create new content. Requires search.module'),
-    ),
+    '#options' => $failover_option,
     '#default_value' => variable_get('freelinking_nodetitle_notfoundaction', 'create'),
     '#description' => t('What should freelinking do when content to link to is not found?'),
   );
