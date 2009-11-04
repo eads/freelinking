@@ -8,5 +8,6 @@ $freelinking['one inch frame'] = array(
   'indicator' => '/oif/',
   'translate' => array(' ' => '-'),
   'replacement' => 'http://oif.eafarris.com/wiki/%1',
+  'tip' => t('Link to a wiki page at oif.eaffaris.com'),
 );
 

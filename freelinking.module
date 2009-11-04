@@ -252,6 +252,37 @@ function freelinking_settings() {
 } // endfunction freelinking_settings (admin settings)
 
 /**
+ * Implementation of hook_filter_tips()
+ */
+function freelinking_filter_tips($delta, $format, $long = FALSE) {
+  if(variable_get('freelinking_markdown_mode', FALSE)) {
+    $pattern = '<tt>[Title](indicator:target)</tt>';
+  }
+  else {
+    $pattern = '<tt>[[indicator:target|Title]]</tt>';
+  }
+  $text .= t('Freelinking helps you easily create HTML links. Links take the form of !pattern.',
+    array('!pattern' => $pattern));
+
+  if($long == FALSE) {
+    return $text;
+  }
+
+  $text = '<h4>' . t('Freelinking') . '</h4>' . $text;
+  $text .= '<br />';
+  $text .= t('Below is a list of available types of freelinks you may use, organized as <strong>Plugin Name</strong>: <em>[indicator]</em>.');
+
+  foreach(freelinking_get_plugins() as $name => $plugin) {
+    $tips[$name] = '<strong>' . ucfirst($name) .'</strong> <em>[' . $plugin['indicator'] . ']</em>';
+    if($plugin['tip']) {
+      $tips[$name] .= ' — ' . $plugin['tip'];
+    }
+  }
+  $text .= theme('item_list', $tips);
+  return $text;
+}
+
+/**
  * Freelinking API
  */
 

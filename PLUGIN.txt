@@ -63,6 +63,13 @@ element defines an array, with the following elements:
   but it wouldn't have to be a link). If your plugin is not using
   'replacement,' then the 'callback' element is *required.*
 
+* 'html'
+  If set to false, the plugin will not accept HTML submitted as link text.
+
+* 'tip'
+  If set, the extended filter tips for freelinking will include this value
+  as a short description of the plugin. It should be run through t().
+
 So, a simple freelinking plugin only needs to include this array. Here's
 our entire example:
     $freelinking['mike'] => array(

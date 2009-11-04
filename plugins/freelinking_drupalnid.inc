@@ -7,6 +7,7 @@
 $freelinking['drupalorgnid'] = array(
   'indicator' => '/d(rupal)?o(rg)?/',
   'callback' => 'freelinking_drupalorgnid_callback',
+  'tip' => t('Link to a drupal.org node.'),
 );
 
 

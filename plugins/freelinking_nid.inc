@@ -10,6 +10,7 @@
 $freelinking['nid'] = array(
   'indicator' => '/(n(id|ode)?)$/A',
   'callback' => 'freelinking_nid_callback',
+  'tip' => t('Link to a local node by nid'),
   'run on view' => TRUE,
 );
 

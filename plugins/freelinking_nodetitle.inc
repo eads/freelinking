@@ -10,6 +10,7 @@
 $freelinking['nodetitle'] = array(
   'indicator' => '/n(t|odetitle)/',
   'callback' => 'freelinking_nodetitle_callback',
+  'tip' => t('Link to a local node by title'),
   'run on view' => TRUE,
 );
 

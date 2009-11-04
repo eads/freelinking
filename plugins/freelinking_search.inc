@@ -8,12 +8,14 @@ $freelinking['search'] = array(
   'indicator' => '/search/',
   'translate' => array(' ' => '+'),
   'callback' => 'freelinking_search_callback',
+  'tip' => t('Run a local search for the specified terms.'),
 );
 
 $freelinking['google'] = array(
   'indicator' => '/google/',
   'translate' => array(' ' => '+'),
   'callback' => 'freelinking_google_callback',
+  'tip' => t('Search google for the specified terms.'),
 );
 
 function freelinking_search_callback($target) {

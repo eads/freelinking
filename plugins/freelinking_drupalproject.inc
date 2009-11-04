@@ -8,5 +8,6 @@ $freelinking['drupalproject'] = array(
   'indicator' => '/d(rupal)?project/',
   'translate' => array(' ' => '_'),
   'replacement' => 'http://drupal.org/project/%1',
+  'tip' => t('Link to a project on drupal.org by name.'),
 );
 

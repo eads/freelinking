@@ -8,6 +8,7 @@ $freelinking['wikipedia'] = array(
   'indicator' => '/w(iki(pedia)?|p)?/',
   'translate' => array(' ' => '_'),
   'replacement' => 'http://' . variable_get('freelinking_wiki_languagecode', 'en') . '.wikipedia.org/wiki/%1',
+  'tip' => t('Link to a wikipedia page.'),
 );
 
 function freelinking_wikipedia_settings() {
