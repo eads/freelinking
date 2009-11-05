@@ -237,6 +237,13 @@ function freelinking_settings() {
     '#description' => t('Use Markdown syntax [Title](plugin:url) in place of Freelinking syntax [[plugin:url|Title]]'),
   );
 
+  $form['freelinking_wrapper'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Wrap links in') . ' &lt;span>',
+    '#default_value' => variable_get('freelinking_wrapper', FALSE),
+    '#description' => t('Used for advanced CSS styling.'),
+  );
+
   // loop through plugin settings functions, adding a fieldset for each
   foreach ($plugin_with_settings as $plugin=>$callback) {
     $form[$plugin] = array(
@@ -336,7 +343,12 @@ function theme_freelink($plugin = NULL, $link= NULL) {
   if ($link['extra']) {
     unset($link['extra']);
   }
-  return call_user_func_array('l', $link);
+  $rendered = call_user_func_array('l', $link);
+  if (variable_get('freelinking_wrapper', FALSE)) {
+    $rendered = '<span class="' . $link[2]['attributes']['class'] . '">'
+      . $rendered . '</span>';
+  }
+  return $rendered;
 }
 
 /**
@@ -346,7 +358,7 @@ function theme_freelink_error($plugin = NULL, $message = NULL) {
   if($message) {
     $message = ': ' . $message;
   }
-  return '<code class="freelink freelink-error freelink-$plugin"
+  return '<span class="freelink freelink-error freelink-$plugin"
     . " freelink-error-$plugin">[' . t('Bad Link') . $message . ']</code>';
 }
 
