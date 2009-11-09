@@ -78,7 +78,9 @@ return TRUE;
         $target = freelinking_parse_target($target);
         $link = _freelinking_build_freelink($freelinking, $current_plugin,
           $target);
-        $text = str_replace($match[0], $link, $text);
+        if ($link) {
+          $text = str_replace($match[0], $link, $text);
+        }
       }
       return $text;
     case 'prepare':
@@ -135,6 +137,12 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
     $link = call_user_func_array($plugin['callback'],
       array($target));
   }
+
+  // if the plugin returns FALSE, do not replace the match
+  if (!$link) {
+    return FALSE;
+  }
+
   // Standardize link, grab authoritative "structured" version
   // designate the rendered text for display
   if (is_array($link)) {
@@ -317,6 +325,26 @@ function freelinking_parse_target($target, $separator = NULL) {
   $args['target'] = $target;
   list($args['dest'], $args['text'], $args['tooltip'], $other) = explode('|', $target);
   return $args;
+}
+
+/**
+ * Build a tooltip for internal content.
+ * Attempts to use description metatag, failover to teaser.
+ */
+function freelinking_internal_tooltip($type, $id) {
+  switch($type) {
+    case 'node':
+      if (module_exists('nodewords')) {
+        $metatags = nodewords_get('node', $id);
+        $description = $metatags['description'];
+      }
+      if (empty($description)) {
+        $n = node_load($id);
+        $description = $n->teaser;
+      }
+      break;
+  }
+  return truncate_utf8($description, 200, FALSE, TRUE);
 }
 
 /**

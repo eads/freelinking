@@ -21,11 +21,7 @@ $freelinking['google'] = array(
 function freelinking_search_callback($target) {
   $link = array();
 
-  if (module_exists('search')) {
-    $link[1] = 'search/node/' . $target['dest'];
-  }
-  // search unavailable exist, handle failover
-  else {
+  if (!module_exists('search')) {
     if ($plugin = variable_get('freelinking_search_failover', 'error') == 'error') {
       // send back an error message.
       return array('error' => t('Search Unavailable'));
@@ -37,8 +33,9 @@ function freelinking_search_callback($target) {
   }
 
   $link[0] = $target['text'] ? $target['text'] : $target['dest'];
+  $link[1] = 'search/node/' . $target['dest'];
   $link[2]['attributes']['title'] =
-    t('Search this site for content like %dest', array('%dest' => $target['dest']));
+    t('Search this site for content like "%dest"', array('%dest' => $target['dest']));
   return $link;
 }
 

@@ -17,52 +17,39 @@ $freelinking['nodetitle'] = array(
 /**
  * Replacement callback for nodetitle plugin
  */
-function freelinking_nodetitle_callback($target) { // resolve $target into a link to the node or a create link
-  $sql = 'SELECT nid FROM {node} WHERE title = "%s" ';
-  if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') { // restrict title search to a content type
-    $sql .= 'AND type ="%s" ';
-    $result = db_query($sql, $target['dest'], variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
-  } // endif title search restriction
-  else {
-    $result = db_query($sql, $target['dest']);
-  } // endifelse no title search restriction
-  while ($node = db_fetch_object($result)) { // should be only one
-    $nid = $node->nid;
-  } // endwhile looping through (one) node
+function freelinking_nodetitle_callback($target) {
+  // Identify and remove language argument (de:Pagename)
+  if (preg_match('/^(\w\w):/', $target['dest'], $matches)) {
+    $language = $matches[1];
+    $target['dest'] = substr($target['dest'], 3);
+  }
+  // get the nid and best guess at language for the title.
+  list($nid, $language) =
+    _freelinking_nodetitle_get_nid_by_lang($target['dest'], $language);
 
+  // if no node was found, identify proceed with configured failover
+  if (!$nid) {
+    return _freelinking_nodetitle_failure($target);
+  }
+
+  // construct values for link
   $title = $target['text'] ? $target['text'] : $target['dest'];
-  if ($nid) { // I got your freelink right here
-    $replacement =  array($title, 'node/' . $nid);
-  } // endif a node was found matching the target
-  else { // Didn't find one. Present a link to create/do a search
-    $notfoundaction = variable_get('freelinking_nodetitle_notfoundaction', 'create');
-    if ($notfoundaction == 'create' or ($notfoundaction == 'noaccesssearch' && node_access('create', variable_get('freelinking_nodetitle_newcontenttype', 'story')))) {
-      $replacement = array($target['dest'], 'node/add/' . variable_get('freelinking_nodetitle_newcontenttype', 'story') , array(
-        'attributes' => array(
-          'class' => 'notfound',
-          'title' => 'Create content titled "' . $target['dest'] . '"',
-        ),
-        'query' => array('edit[title]' => $target['dest']),
-        ));
-    } // endif create
-    else { // either no create action or no access rights, so search
-      return array('plugin' => 'search');
-    } // endifelse search
-  } // endifelse no node found
-  return $replacement;
+  if (!$target['tooltip']) {
+    $target['tooltip'] = freelinking_internal_tooltip('node', $nid);
+  }
+
+  // return link structure
+  return array($title, 'node/' . $nid, array(
+    'attributes' => array('title' => $tooltip),
+    'language' => $language,
+  ));
 }
 
 /**
  * Nodetitle Settings Callback
  */
-function freelinking_nodetitle_settings() { // settings for the nodetitle plugin
-  $form['nodetitle']['freelinking_nodetitle_newcontenttype'] = array(
-    '#title' => t('Default for new content'),
-    '#type'  => 'select',
-    '#options' => node_get_types('names'),
-    '#default_value' => variable_get('freelinking_nodetitle_newcontenttype', 'story'),
-    '#description'  => t('Content that is to be created from a freelink should be of this type.'),
-  );
+function freelinking_nodetitle_settings() {
+  // Restrict nodetitle plugin to search specified content type
   $form['nodetitle']['freelinking_nodetitle_searchcontenttype'] = array(
     '#title' => t('Restrict freelinks to this content type'),
     '#type'  => 'select',
@@ -71,28 +58,121 @@ function freelinking_nodetitle_settings() { // settings for the nodetitle plugin
     '#description' => t('Lookup by title to find a freelink will be restricted to this content type only.'),
   );
 
-  $failover_option['create'] = t('Add a link to create content. (Without Permission: Access Denied)');
-  if (module_exists('search') && user_access('search content')) {
-    $failover_option['noaccesssearch'] = t('Add a link to create content. (Without Permission: Search Content)');
-    $failover_option['search'] = t('Add a link to Search Content.');
+  $failover_option['none'] = t('Do nothing');
+
+  // if Create Node plugin is available, it's an option!
+  if (module_exists('freelinking_create')) {
+    $failover_option['create'] = t('Add a link to create content. (Without Permission: Access Denied)');
   }
-  else if ($search_plugin = variable_get('freelinking_search_failover', 'error') != 'error') {
-    $failover_option['noaccesssearch'] =
-      t('Add a link to create content. (Without Permission: %search Search Content)',
-        array('%search' => ucfirst($search_plugin)));
-    $failover_option['search'] = t('Add a link to %search Search Content.',
-      array('%search' => ucfirst($search_plugin)));
+  else {
+    $extra_description ='<br /><strong>'
+      . t('Note: Enable %module for Content Creation option.', array('%module' => 'Freelinking Create'))
+      . '</strong>';
   }
 
+  // if search is available, have a search failover
+  if (module_exists('search')) {
+    $failover_option['search'] = t('Add a link to Search Content');
+  }
+  else {
+    $extra_description .= '<br /><strong>'
+      . t('Note: Enable the %module module for internal search option.', array('%module' => 'Search'))
+      . '</strong>';
+    // if search is unavailable offer it's own (applicable)search fallback. [Google, etc]
+    if (($search_plugin = variable_get('freelinking_search_failover', 'error')) != 'error') {
+      $failover_option['search'] = t('Add a link to %search Search Content.',
+        array('%search' => ucfirst($search_plugin)));
+    }
+  }
+  $failover_option['error'] = t('Insert an error message');
 
   $form['nodetitle']['freelinking_nodetitle_notfoundaction'] = array(
     '#title' => t('If a suitable content is not found'),
     '#type' => 'select',
     '#options' => $failover_option,
-    '#default_value' => variable_get('freelinking_nodetitle_notfoundaction', 'create'),
-    '#description' => t('What should freelinking do when content to link to is not found?'),
+    '#default_value' => variable_get('freelinking_nodetitle_notfoundaction',
+      _freelinking_nodetitle_default_failover()),
+    '#description' => t('What should freelinking do when the page is not found?')
+      . $extra_description,
   );
   return $form;
 } // endfunction freelinking_freelinking_settings()
+
+/**
+ * Grab the nid associated with the title.
+ * Attempt some degree of language sensibility
+ */
+function _freelinking_nodetitle_get_nid_by_lang($title, $node_lang = NULL) {
+  global $language;
+
+  // Run a language-sensitive query
+  if (module_exists('locale')) {
+    // if a language is specified, ignore the global
+    if ($node_lang) {
+      $language = $node_lang;
+    }
+    $sql = "SELECT nid, language FROM {node} WHERE title = '%s' and language = '%s'";
+    if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') {
+      $sql .= " AND type = '%s'";
+      $result = db_query($sql, $title, $language,
+        variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
+    }
+    else {
+      $result = db_query($sql, $title, $language);
+    }
+  }
+  // if locale does not exist or it provided an empty result, get anything.
+  if (empty($result)) {
+    $sql = "SELECT nid FROM {node} WHERE title = '%s'";
+    if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') {
+      $sql .= " AND type = '%s'";
+      $result = db_query($sql, $title,
+        variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
+    }
+    else {
+      $result = db_query($sql, $title);
+    }
+  }
+  $node = db_fetch_object($result);
+  // get the nid and it's language
+  if(isset($node)) {
+    return array($node->nid, $node->language);
+  }
+
+  return;
+}
+
+/**
+ * Determining the proper failure response per plugin configuration
+ */
+function _freelinking_nodetitle_failure($target) {
+  $failover = variable_get('freelinking_nodetitle_notfoundaction',
+    _freelinking_nodetitle_default_failover());
+
+  switch($failover) {
+    case 'create':
+      return array('plugin' => 'create node');
+    case 'search':
+      return array('plugin' => 'search');
+    case 'error':
+      return array('error' => t('%title not found',
+        array('%title' => $target['dest'])));
+  }
+  // do nothing
+  return FALSE;
+}
+
+/**
+ * Find the best default failover
+ */
+function _freelinking_nodetitle_default_failover() {
+  if (module_exists('freelinking_create')) {
+    return 'create node';
+  }
+  else if (module_exists('search')) {
+    return 'search';
+  }
+  return 'none';
+}
 
 // vim: tw=300 nowrap syn=php
