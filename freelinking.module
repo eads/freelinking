@@ -43,12 +43,12 @@ return TRUE;
     case 'process':
       $freelinking = freelinking_get_plugins();
       $defaultplugin = variable_get('freelinking_default', 'nodetitle');
-      $markdown = variable_get('freelinking_markdown_mode', FALSE);
+      $syntax = variable_get('freelinking_match_syntax', 'double_bracket');
+      $regex = _freelinking_match_pattern();
 
       // Loop through every freelink format
       // Space at text start prevents match failure at start.
-      preg_match_all(_freelinking_match_pattern(), ' ' . $text,
-        $matches, PREG_SET_ORDER);
+      preg_match_all($regex[$syntax], ' ' . $text, $matches, PREG_SET_ORDER);
 
       foreach($matches as $match) {
         $current_plugin = '';
@@ -57,7 +57,7 @@ return TRUE;
         $match[0] = preg_replace('/^[^\\\\]/', '', $match[0]);
 
         // in markdown mode, the first match is part of the target.
-        if ($markdown) {
+        if ($syntax == 'markdown') {
           $match[1] .= '|' . $match[2];
         }
 
@@ -238,11 +238,17 @@ function freelinking_settings() {
     '#description' => t('Default plugin to use when not specified in text. "Nodetitle" mimics previous versions of Freelinking.'),
   );
 
-  $form['freelinking_markdown_mode'] = array(
-    '#title' => t('Markdown Syntax Mode'),
-    '#type' => 'checkbox',
-    '#default_value' => variable_get('freelinking_markdown_mode', FALSE),
-    '#description' => t('Use Markdown syntax [Title](plugin:url) in place of Freelinking syntax [[plugin:url|Title]]'),
+
+  $syntax['double_bracket'] = t('Standard') . ' - [[plugin:target|Title]]';
+  $syntax['single_bracket'] = t('Single Bracket') . ' - [plugin:target|Title]';
+  $syntax['markdown'] = 'Markdown - [Title](plugin:target)';
+
+  $form['freelinking_match_syntax'] = array(
+    '#title' => t('Match Syntax Mode'),
+    '#type' => 'select',
+    '#default_value' => variable_get('freelinking_match_syntax', 'double_bracket'),
+    '#options' => $syntax,
+    '#description' => t('What syntax to use in identifying freelinks.'),
   );
 
   $form['freelinking_wrapper'] = array(
@@ -270,11 +276,15 @@ function freelinking_settings() {
  * Implementation of hook_filter_tips()
  */
 function freelinking_filter_tips($delta, $format, $long = FALSE) {
-  if(variable_get('freelinking_markdown_mode', FALSE)) {
+  $syntax = variable_get('freelinking_syntax_mode', 'double_bracket');
+  if ($syntax == 'double_bracket') {
+    $pattern = '<tt>[[indicator:target|Title]]</tt>';
+  }
+  else if ($syntax == 'markdown') {
     $pattern = '<tt>[Title](indicator:target)</tt>';
   }
   else {
-    $pattern = '<tt>[[indicator:target|Title]]</tt>';
+    $pattern = '<tt>[indicator:target|Title]</tt>';
   }
   $text .= t('Freelinking helps you easily create HTML links. Links take the form of !pattern.',
     array('!pattern' => $pattern));
@@ -404,12 +414,14 @@ function _freelinking_match_pattern($separator = NULL) {
   }
   $separator = preg_quote($separator);
 
-  // Markdown mode: use inline markdown link syntax
-  if (variable_get('freelinking_markdown_mode', FALSE)) {
-    return '/[^\\\\]\[([^\[.]*)\]\((.+' . $separator . '.+)\)/Uu';
-  }
-  // Otherwise, use freelink/wiki style
-  return '/[^\\\\]\[\[(.+' . $separator . '?.+)]]/Uu';
+  $option['double_bracket'] =
+    '/[^\\\\]\[\[(.+' . $separator . '?.+)]]/Uu';
+  $option['single_bracket'] =
+    '/[^\\\\]\[(.+' . $separator . '?.+)]/Uu';
+  $option['markdown'] =
+    '/[^\\\\]\[([^\[.]*)\]\((.+' . $separator . '.+)\)/Uu';
+
+  return $option;
 }
 
 // vim: tw=300 nowrap syn=php
