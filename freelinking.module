@@ -277,6 +277,17 @@ function freelinking_settings() {
 } // endfunction freelinking_settings (admin settings)
 
 /**
+ * Implementation of hook_form_FORM_ID_alter()
+ * Used to add Vertical Tabs enhancement to admin page
+ */
+function freelinking_form_freelinking_settings_alter(&$form, &$form_state) {
+  if (module_exists('vertical_tabs') &&
+    function_exists('vertical_tabs_add_vertical_tabs')) {
+      vertical_tabs_add_vertical_tabs($form);
+  }
+}
+
+/**
  * Implementation of hook_filter_tips()
  */
 function freelinking_filter_tips($delta, $format, $long = FALSE) {
