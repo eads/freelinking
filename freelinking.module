@@ -57,8 +57,13 @@ return TRUE;
         $match[0] = preg_replace('/^[^\\\\]/', '', $match[0]);
 
         // in markdown mode, the first match is part of the target.
+        // This is hacky and temporary while matching is in transition.
         if ($syntax == 'markdown') {
-          $match[1] .= '|' . $match[2];
+          if (!$match[4]) { $match[4] = $match[3]; }
+          else { $match[4] = $match[3] . ':' . $match[4]; }
+          // encode pipes in Title.
+          $match[2] = urlencode($match[2]);
+          $match[1] = $match[4] . '|' . $match[2] . '|' . $match[5];
         }
 
         // default freelink (no colon)
@@ -179,7 +184,6 @@ function freelinking_freelink_alter(&$link, $target, $plugin_name, $plugin) {
     $link['error'] = t('Invalid Link');
     return;
   }
-
   // title text is empty, insert from target or use URL
   if (!$link[0]) {
     $link[0] = $target['text'] ? $target['text'] : $link[1];
@@ -334,6 +338,7 @@ function freelinking_parse_target($target, $separator = NULL) {
   $args = array();
   $args['target'] = $target;
   list($args['dest'], $args['text'], $args['tooltip'], $other) = explode('|', $target);
+  $args['text'] = urldecode($args['text']);
   return $args;
 }
 
@@ -348,12 +353,9 @@ function freelinking_internal_tooltip($type, $id) {
         $metatags = nodewords_get('node', $id);
         $description = $metatags['description'];
       }
-      if (empty($description)) {
-        $n = node_load($id);
-        $description = $n->teaser;
-      }
       break;
   }
+  $description = str_replace('"', '\'', $description);
   return truncate_utf8($description, 200, FALSE, TRUE);
 }
 
@@ -419,8 +421,7 @@ function _freelinking_match_pattern($separator = NULL) {
   $option['single_bracket'] =
     '/[^\\\\]\[(.+' . $separator . '?.+)]/Uu';
   $option['markdown'] =
-    '/[^\\\\]\[([^\[.]*)\]\((.+' . $separator . '.+)\)/Uu';
-
+    '/[^\\\\](\[([^\]]+)\]\((.+)(?:' . $separator . '(.+))?(?:\s"(.+)")?\))/Uu';
   return $option;
 }
 

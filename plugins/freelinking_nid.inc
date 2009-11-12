@@ -28,7 +28,14 @@ function freelinking_nid_callback($target) { // resolve $target into a link to t
 
   if ($title) { // I got your freelink right here
     $title = $target['text'] ? $target['text'] : $title;
-    $replacement =  array($title, 'node/' . $target['dest']);
+
+    if (!$target['tooltip']) {
+      $target['tooltip'] = freelinking_internal_tooltip('node', $target['dest']);
+    }
+
+    $replacement =  array($title, 'node/' . $target['dest'], array(
+      'attributes' => array('title' => $target['tooltip']),
+    ));
   } // endif a title was found matching the target
   else { // Didn't find one. goto fail.
     $replacement = t('Invalid Node ID !nid', array('!nid' => $nid));
