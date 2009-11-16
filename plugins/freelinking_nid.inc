@@ -17,7 +17,8 @@ $freelinking['nid'] = array(
 function freelinking_nid_callback($target) { // resolve $target into a link to the node or display failure
   if (!is_numeric($target['dest'])) {
     return array('error' =>
-      t('Invalid Node ID !nid', array('!nid' => $target['dest'])));
+      t('Invalid Node ID "!nid"', array('!nid' => $target['dest']))
+    );
   }
   $sql = 'SELECT title FROM {node} WHERE nid = "%s" ';
   $result = db_query($sql, $target['dest']);
@@ -26,20 +27,21 @@ function freelinking_nid_callback($target) { // resolve $target into a link to t
     $title = $node->title;
   } // endwhile looping through (one) node
 
-  if ($title) { // I got your freelink right here
-    $title = $target['text'] ? $target['text'] : $title;
+  // Node not found for $nid.
+  if (!$title) {
+    return array('error' =>
+      t('Invalid Node ID "!nid"', array('!nid' => $target['dest']))
+    );
+  }
 
-    if (!$target['tooltip']) {
-      $target['tooltip'] = freelinking_internal_tooltip('node', $target['dest']);
-    }
+  $title = $target['text'] ? $target['text'] : $title;
+  if (!$target['tooltip']) {
+    $target['tooltip'] = freelinking_internal_tooltip('node', $target['dest']);
+  }
 
-    $replacement =  array($title, 'node/' . $target['dest'], array(
-      'attributes' => array('title' => $target['tooltip']),
-    ));
-  } // endif a title was found matching the target
-  else { // Didn't find one. goto fail.
-    $replacement = t('Invalid Node ID !nid', array('!nid' => $nid));
-  } // endifelse no node found
+  $replacement =  array($title, 'node/' . $target['dest'], array(
+    'attributes' => array('title' => $target['tooltip']),
+  ));
   return $replacement;
 }
 

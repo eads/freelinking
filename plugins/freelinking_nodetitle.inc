@@ -34,10 +34,10 @@ function freelinking_nodetitle_callback($target) {
 
   // construct values for link
   $title = $target['text'] ? $target['text'] : $target['dest'];
+
   if (!$target['tooltip']) {
     $target['tooltip'] = freelinking_internal_tooltip('node', $nid);
   }
-
   // return link structure
   return array($title, 'node/' . $nid, array(
     'attributes' => array('title' => $tooltip),
@@ -61,7 +61,7 @@ function freelinking_nodetitle_settings() {
   $failover_option['none'] = t('Do nothing');
 
   // if Create Node plugin is available, it's an option!
-  if (module_exists('freelinking_create')) {
+  if (module_exists('freelinking_prepopulate')) {
     $failover_option['create'] = t('Add a link to create content. (Without Permission: Access Denied)');
   }
   else {
@@ -151,7 +151,7 @@ function _freelinking_nodetitle_failure($target) {
 
   switch($failover) {
     case 'create':
-      return array('plugin' => 'create node');
+      return array('plugin' => 'createnode');
     case 'search':
       return array('plugin' => 'search');
     case 'error':

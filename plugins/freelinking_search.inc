@@ -19,16 +19,19 @@ $freelinking['google'] = array(
 );
 
 function freelinking_search_callback($target) {
+  global $base_url;
   $link = array();
+  $failover = variable_get('freelinking_search_failover', 'error');
 
   if (!module_exists('search')) {
-    if ($plugin = variable_get('freelinking_search_failover', 'error') == 'error') {
+    if ($failover == 'error') {
       // send back an error message.
       return array('error' => t('Search Unavailable'));
     }
     else {
       // specify a plugin for next effort
-      return array('plugin' => $plugin);
+      $target['other']['site'] = $base_url;
+      return array('plugin' => $failover, 'target' => $target);
     }
   }
 
@@ -57,9 +60,32 @@ function freelinking_search_settings() {
  * Replacement callback for Google plugin
  */
 function freelinking_google_callback($target) {
-  $title = $target['text'] ? $target['text'] : 'Google Search "'
-    . $target['dest'] . '"';
+  global $language;
+  if (!$language) {
+    $lang = 'en';
+  }
+  else {
+    $lang = $language->language;
+  }
 
-  $url = 'http://www.google.com/search?q=' . $target['dest'];
-  $link = array($title, $url);
+  if ($target['text']) {
+    $title = $target['text'];
+  }
+  else {
+    $title = 'Google Search "' . $target['dest'] . '"';
+  }
+  
+  $link = array($title, 'http://www.google.com/search', array(
+    'query' => array('q' => $target['dest']),
+    'fragment' => 'hl=' . $lang,
+    'external' => TRUE,
+    'attributes' => array(
+      'title' => t('Search Google for content like "%dest"',
+        array('%dest' => $target['dest'])),
+    ),
+  ));
+  if ($target['other']['site']) {
+    $link[2]['query']['as_sitesearch'] = urlencode($target['other']['site']);
+  }
+  return $link;
 }
