@@ -1,0 +1,141 @@
+<?php
+// $Id$
+/**
+ * Freelinking Create
+ *
+ * A Freelinking 3 module for the creation of Prepopulate-based plugins.
+ * Current provides node/add links via the Create Node plugin
+ * Intended for use primarily as a "failover" plugin when others fail.
+ */
+
+function freelinking_prepopulate_freelinking() {
+  $freelinking['createnode'] = array(
+    'indicator' => '/^create(node)?$/',
+    'callback' => 'freelinking_prepopulate_node_callback',
+    'settings' => 'freelinking_prepopulate_node_settings',
+  );
+  return $freelinking;
+}
+
+/**
+ * Node Create replacement callback
+ * Ultimate default: [[create:pagetitle]] =>
+ * <a href="node/add/page?edit[title]=pagetitle>pagetitle</a>
+ */
+function freelinking_prepopulate_node_callback($target) {
+  // use specified node type or fallback to configuration
+  if ($target['other']['type']) {
+    $node_type = $target['other']['type'];
+  }
+  else {
+    $node_type = variable_get('freelinking_prepopulate_node_type',
+      _freelinking_prepopulate_default_node_type());
+  }
+
+  $url = 'node/add/' . str_replace('_', '-', $node_type);
+  // build out node form fields if they are specified
+
+  // if prepopulate args are set, translate them in.
+  if (is_array($target['other']['prepopulate'])) {
+    foreach($target['other']['prepopulate'] as $field => $value) {
+      $query["edit[$field]"] = $value;
+    }
+  }
+
+  $title = $target['text'] ? $target['text'] : $target['dest'];
+  // otherwise, resort to configuration settings
+  if(isset($query)) {
+    return array($title, $url, array('query' => $query));
+  }
+
+  $query['edit[title]'] = check_plain($target['dest']);
+
+  $advanced = variable_get('freelinking_prepopulate_node_advanced', array());
+  // node check done in if statement above
+  if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) == NULL) {
+    $node = node_load(arg(1));
+  }
+
+  if (empty($advanced) || !$node) {
+    return array($title, $url, array('query' => $query,
+      'attributes' => array(
+        'title' => t('Create node') . ' "' . $target['dest'] . '"'
+      ),
+    ));
+  }
+
+  foreach ($advanced as $option) {
+    switch($option) {
+      case 'og':
+        if ($node->og_groups) {
+          foreach($node->og_groups as $key => $gid) {
+            $query["gids[$key]"] = $gid;
+          }
+        }
+        break;
+      case 'book':
+        if ($node->book) {
+          $query['parent'] = $node->book['mlid'];
+        }
+        break;
+      case 'taxonomy':
+        if ($node->taxonomy) {
+          foreach ($node->taxonomy as $term) {
+            $query['edit[taxonomy][tags][' . $term->vid . ']'] .= $term->name . ',';
+          }
+        }
+        break;
+    }
+  }
+  return array($title, $url, array('query' => $query,
+    'attributes' => array(
+      'title' => t('Create node') . ' "' . $target['dest'] . '"'
+    ),
+  ));
+}
+
+
+/**
+ * Settings callback for "Create Node"
+ */
+function freelinking_prepopulate_node_settings() {
+  if (module_exists('book')) {
+    $options['book'] = t('Parent book page');
+  }
+  if (module_exists('taxonomy')) {
+    $options['taxonomy'] = t('Same taxonomy terms (for shared vocabulary)');
+  }
+  if (module_exists('og')) {
+    $options['og'] = t('Same Organic Group audiences');
+  }
+  $form['createnode']['freelinking_prepopulate_node_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Default Type to Create'),
+    '#default_value' => variable_get('freelinking_prepopulate_node_type',
+      _freelinking_prepopulate_default_node_type()),
+    '#options' => node_get_types('names'),
+    '#description' => t('Which content type should be created by Freelinking?'),
+  );
+
+  if(empty($options)) {
+    return $form;
+  }
+
+  $form['createnode']['freelinking_prepopulate_node_advanced'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Advanced Options'),
+    '#default_value' => variable_get('freelinking_prepopulate_node_advanced', array()),
+    '#options' => $options,
+    '#description' => t('Use the <em>Linking Node</em> for Create Node presets.'),
+  );
+  return $form;
+}
+
+/**
+ * Identify an existing node type as default
+ * Gets the first available type
+ */
+function _freelinking_prepopulate_default_node_type() {
+  $types = node_get_types('names');
+  return $types[0];  
+}

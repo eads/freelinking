@@ -1,0 +1,15 @@
+<?php
+// $Id$
+/**
+ * freelinking_prepopulate.install
+ * Warning message FL3 compatibility.
+ */
+
+/**
+ * Implementation of hook_enable().
+ */
+function freelinking_prepopulate_enable() {
+  drupal_set_message(
+    t('Freelinking Prepopulate provides plugins to the 3.x line of Freelinking.')
+  );
+}
