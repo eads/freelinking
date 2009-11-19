@@ -3,6 +3,7 @@
 /**
  * Freelinking Create
  *
+ * @file
  * A Freelinking 3 module for the creation of Prepopulate-based plugins.
  * Current provides node/add links via the Create Node plugin
  * Intended for use primarily as a "failover" plugin when others fail.
@@ -37,14 +38,14 @@ function freelinking_prepopulate_node_callback($target) {
 
   // if prepopulate args are set, translate them in.
   if (is_array($target['other']['prepopulate'])) {
-    foreach($target['other']['prepopulate'] as $field => $value) {
+    foreach ($target['other']['prepopulate'] as $field => $value) {
       $query["edit[$field]"] = $value;
     }
   }
 
   $title = $target['text'] ? $target['text'] : $target['dest'];
   // otherwise, resort to configuration settings
-  if(isset($query)) {
+  if (isset($query)) {
     return array($title, $url, array('query' => $query));
   }
 
@@ -65,10 +66,10 @@ function freelinking_prepopulate_node_callback($target) {
   }
 
   foreach ($advanced as $option) {
-    switch($option) {
+    switch ($option) {
       case 'og':
         if ($node->og_groups) {
-          foreach($node->og_groups as $key => $gid) {
+          foreach ($node->og_groups as $key => $gid) {
             $query["gids[$key]"] = $gid;
           }
         }
@@ -117,7 +118,7 @@ function freelinking_prepopulate_node_settings() {
     '#description' => t('Which content type should be created by Freelinking?'),
   );
 
-  if(empty($options)) {
+  if (empty($options)) {
     return $form;
   }
 
@@ -137,5 +138,5 @@ function freelinking_prepopulate_node_settings() {
  */
 function _freelinking_prepopulate_default_node_type() {
   $types = node_get_types('names');
-  return $types[0];  
+  return $types[0];
 }

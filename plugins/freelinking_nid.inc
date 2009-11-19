@@ -1,11 +1,14 @@
 <?php
-// nid plugin for freelinking
-// Originially by [grayside](http://drupal.org/user/346868)
-// See http://drupal.org/node/486954
-
-// allows for a link like [[node:<nid>]], [[n:<nid>]], or [[node:<nid>]] to be expanded to
-// a link to the node with the title associated with that nid.
-// A "could not find nid" message is displayed if the nid could not be found.
+// $Id$
+/** nid plugin for freelinking
+ * Originially by [grayside](http://drupal.org/user/346868)
+ * See http://drupal.org/node/486954
+ *
+ * @file
+ * Allows for a link like [[node:<nid>]], [[n:<nid>]], or [[node:<nid>]] to be
+ * expanded to a link to the node with the title associated with that nid.
+ * A "could not find nid" message is displayed if the nid could not be found.
+ */
 
 $freelinking['nid'] = array(
   'indicator' => '/(n(id|ode)?)$/A',

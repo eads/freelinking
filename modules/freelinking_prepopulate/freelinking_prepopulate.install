@@ -2,7 +2,9 @@
 // $Id$
 /**
  * freelinking_prepopulate.install
- * Warning message FL3 compatibility.
+ *
+ * @file
+ * Warns of specific Freelinking version compatibility.
  */
 
 /**

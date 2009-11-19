@@ -1,8 +1,12 @@
 <?php
-// wikipedia plugin for freelinking
-
-// allows for a link like [[w:Matthew Good]] to be expanded to
-// en.wikipedia.org/wiki/Matthew_Good
+// $Id$
+/**
+ * wikipedia plugin for freelinking
+ *
+ * @file
+ * Allows for a link like [[w:Matthew Good]] to be expanded to
+ * en.wikipedia.org/wiki/Matthew_Good
+ */
 
 $freelinking['wikipedia'] = array(
   'indicator' => '/w(iki(pedia)?|p)?/',

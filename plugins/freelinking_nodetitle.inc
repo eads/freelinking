@@ -1,10 +1,11 @@
 <?php
-
+// $Id$
 /**
  * Nodetitle plugin for Freelinking
- * allows for a link like [[nodetitle:Freelinking filter]] to be expanded to
- * a link to the node titled "Freelinking filter" or a link to create
- * the node.
+ *
+ * @file
+ * Allows for a link like [[nodetitle:Freelinking filter]] to be expanded to
+ * a link to the node titled "Freelinking filter" or a link to create the node.
  */
 
 $freelinking['nodetitle'] = array(
@@ -21,7 +22,7 @@ function freelinking_nodetitle_callback($target) {
   // Identify and remove language argument (de:Pagename)
   if (preg_match('/^(\w\w):/', $target['dest'], $matches)) {
     $language = $matches[1];
-    $target['dest'] = substr($target['dest'], 3);
+    $target['dest'] = drupal_substr($target['dest'], 3);
   }
   // get the nid and best guess at language for the title.
   list($nid, $language) =
@@ -81,7 +82,7 @@ function freelinking_nodetitle_settings() {
     // if search is unavailable offer it's own (applicable)search fallback. [Google, etc]
     if (($search_plugin = variable_get('freelinking_search_failover', 'error')) != 'error') {
       $failover_option['search'] = t('Add a link to %search Search Content.',
-        array('%search' => ucfirst($search_plugin)));
+        array('%search' => drupal_ucfirst($search_plugin)));
     }
   }
   $failover_option['error'] = t('Insert an error message');
@@ -135,7 +136,7 @@ function _freelinking_nodetitle_get_nid_by_lang($title, $node_lang = NULL) {
   }
   $node = db_fetch_object($result);
   // get the nid and it's language
-  if(isset($node)) {
+  if (isset($node)) {
     return array($node->nid, $node->language);
   }
 
@@ -149,7 +150,7 @@ function _freelinking_nodetitle_failure($target) {
   $failover = variable_get('freelinking_nodetitle_notfoundaction',
     _freelinking_nodetitle_default_failover());
 
-  switch($failover) {
+  switch ($failover) {
     case 'create':
       return array('plugin' => 'createnode');
     case 'search':
@@ -169,7 +170,7 @@ function _freelinking_nodetitle_default_failover() {
   if (module_exists('freelinking_create')) {
     return 'create node';
   }
-  else if (module_exists('search')) {
+  elseif (module_exists('search')) {
     return 'search';
   }
   return 'none';

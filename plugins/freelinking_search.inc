@@ -2,6 +2,9 @@
 // $Id$
 /**
  * Search Plugin for Freelinking
+ *
+ * @file
+ * Provides Internal & Google search plugins.
  */
 
 $freelinking['search'] = array(
@@ -74,7 +77,7 @@ function freelinking_google_callback($target) {
   else {
     $title = 'Google Search "' . $target['dest'] . '"';
   }
-  
+
   $link = array($title, 'http://www.google.com/search', array(
     'query' => array('q' => $target['dest']),
     'fragment' => 'hl=' . $lang,
