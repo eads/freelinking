@@ -128,9 +128,12 @@ function _freelinking_render_freelink($plugin_name, $link) {
   if ($link['error']) {
     return theme('freelink_error', $plugin_name, $link['error']);
   }
-  else {
-    return theme('freelink', $plugin_name, $link);
+  $rendered =  theme('freelink', $plugin_name, $link);
+  if (variable_get('freelinking_wrapper', FALSE)) {
+    $rendered = '<span class="' . $link[2]['attributes']['class'] . '">'
+      . $rendered . '</span>';
   }
+  return $rendered;
 }
 
 /**
@@ -300,7 +303,8 @@ function freelinking_build_freelink($freelinking, $plugin_name, $target) {
 
   // if a plugin does not exist, go to failure.
   if (!$plugin) {
-    return array('error' => t('Link Plugin Not Found'));
+    return array('error' => t('Plugin !plugin Not Found',
+      array('!plugin' => '<em>' . $plugin_name . '</em>')));
   }
 
   // run the text through translation
@@ -404,10 +408,6 @@ function theme_freelink($plugin = NULL, $link= NULL) {
     unset($link['extra']);
   }
   $rendered = call_user_func_array('l', $link);
-  if (variable_get('freelinking_wrapper', FALSE)) {
-    $rendered = '<span class="' . $link[2]['attributes']['class'] . '">'
-      . $rendered . '</span>';
-  }
   return $rendered;
 }
 
