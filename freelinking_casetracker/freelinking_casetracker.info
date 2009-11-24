@@ -1,7 +1,0 @@
-; $Id$
-name = Freelinking for Case Tracker
-description = A freelinking plugin for Case Tracker.
-package = Input filters
-core = 6.x
-dependencies[] = freelinking
-dependencies[] = casetracker
