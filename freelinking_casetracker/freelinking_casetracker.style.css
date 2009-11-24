@@ -1,0 +1,40 @@
+/** Case Status **/
+a.casetracker-status-open {
+  background-color: #ffffdd;  
+}
+a.casetracker-status-resolved {
+  background-color: #c0ffc0;
+}
+a.casetracker-status-deferred { 
+  background-color: #ffe7dd; 
+}
+a.casetracker-status-duplicate { 
+  background-color: #ddddff; 
+}
+
+/** Case Priority **/
+a.casetracker-priority-low { 
+  color:    #000099;
+}
+a.casetracker-priority-normal { }
+a.casetracker-priority-high { 
+  color:    #990000; 
+}
+
+/** Case Type **/
+a.casetracker-type-bug {}
+a.casetracker-type-feature-request {}
+a.casetracker-type-general-task {}
+
+/** Icons Use Spans. **/
+/* Be sure to turn on <span> Wrapper in Freelinking settings */
+span.casetracker-type-feature-request {
+  margin-left:2px;
+  padding-left:16px;
+  background: transparent url(icons/16x16/applications-science.png) no-repeat center left;
+}
+span.casetracker-type-general-task {
+  margin-left:2px;
+  padding-left: 16px; 
+  background: transparent url(icons/16x16/accessories-text-editor.png) no-repeat center left;
+}

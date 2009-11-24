@@ -1,0 +1,127 @@
+<?php
+// $Id$
+/**
+ * Freelinking for Casetracker
+ *
+ * @file
+ * Provides a Freelinking support for Casetracker issues.
+ * Provides Drupal issue-tracker style link text and issue fields
+ * Also provides CSS classes for styling the link based on issue information
+ *
+ * [[case:<nid>]] => #<nid>: <title>
+ */
+
+/**
+ * Implementation of hook_freelinking().
+ */
+function freelinking_casetracker_freelinking() {
+  $freelinking = array();
+  $freelinking['casetracker'] = array(
+    'indicator' => '/case(tracker)??/',
+    'callback' => 'freelinking_casetracker_callback',
+    'settings' => 'freelinking_casetracker_settings',
+    'tip' => t('Create a styled link by case number.'),
+  );
+  return $freelinking;
+}
+
+/**
+ * Callback for freelinking_casetracker_freelinking()
+ */
+function freelinking_casetracker_callback($target) { // resolve $target into a link to the node or display failure
+  if ($target['dest'][0] == '#') {
+    $target['dest'] = drupal_substr($target['dest'], 1);
+  }
+
+  if (!is_numeric($target['dest'])) {
+    return array('error' => t('Invalid Case Identifier'));
+  }
+
+  $sql = 'SELECT casetracker_case.case_status_id AS status, casetracker_case.case_priority_id AS priority, '
+    . 'casetracker_case.case_type_id AS type, node.title AS title, casetracker_case.pid AS pid FROM node node '
+    . 'LEFT JOIN casetracker_case casetracker_case ON node.vid = casetracker_case.vid WHERE node.nid = "%s" AND node.type = "%s"';
+  $result = db_query($sql, $target['dest'], 'casetracker_basic_case');
+
+  // get the relevant case data
+  $node = db_fetch_object($result);
+  if (!$node) {
+    return array('error' =>
+      t('Invalid Case #!nid', array('!nid' => $target['dest'])));
+  }
+
+  $status = drupal_strtolower(str_replace(' ', '-', casetracker_case_state_load($node->status, 'status')));
+  $type = drupal_strtolower(str_replace(' ', '-', casetracker_case_state_load($node->type, 'type')));
+  $priority = drupal_strtolower(str_replace(' ', '-', casetracker_case_state_load($node->priority, 'priority')));
+
+  if ($target['text']) {
+    $title = $target['text'];
+  }
+  else {
+    $title = '#' . $target['dest'] . ' ' . $node->title;
+  }
+  $tooltip = '#' . $target['dest']
+    . ": Status ($status) - Type ($type) - Priority ($priority)";
+  if ($target['tooltip']) {
+    $tooltip .= '. ' . $target['tooltip'];
+  }
+
+  // build out the link, 'extra' contains a reference to the project nid
+  $retn =  array($title, 'node/' . $target['dest'], array(
+    'attributes' => array(
+      'class' => 'casetracker-project-' . $node->pid . ' casetracker-status-'
+        . $status . ' casetracker-type-' . $type . ' casetracker-priority-' . $priority,
+      'title' => $tooltip,
+    ),
+    'extra' => array(
+      'pid' => $node->pid,
+      'status' => $status,
+      'type' => $type,
+      'priority' => $priority,
+    ),
+  ));
+
+  return $retn;
+}
+
+/**
+ * Plugin settings callback
+ */
+function freelinking_casetracker_settings() {
+  $form['casetracker']['freelinking_casetracker_theme_override'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Ignore Casetracker Link Theming'),
+    '#default_value' => variable_get('freelinking_casetracker_theme_override', FALSE),
+    '#description' => t('Do not use the styling provided by Freelinking for your Casetracker links.'),
+  );
+  return $form;
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function freelinking_casetracker_init() {
+  if (!variable_get('freelinking_casetracker_theme_override', FALSE)) {
+    drupal_add_css(drupal_get_path('module', 'freelinking_casetracker')
+      . '/freelinking_casetracker.style.css');
+  }
+}
+
+/**
+ * Implementation of hook_freelink_alter().
+
+function freelinking_casetracker_freelink_alter($link, $target, $plugin_name, $plugin) {
+  switch($plugin_name) {
+    case 'nodetitle': case 'create node':
+      $link[1] = str_replace('casetracker_basic_case', 'casetracker-basic-case', $link[1]);
+      $link[1] = str_replace('casetracker_basic_project', 'casetracker-basic-project', $link[1]);
+      break;
+  }
+}
+
+
+function freelinking_casetracker_form_casetracker_basic_case_node_form_alter(&$form, &$form_state) {
+  dpm($form);
+}
+ */
+// vim:tw=300 nowrap syn=php
+
