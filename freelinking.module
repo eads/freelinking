@@ -351,6 +351,7 @@ function freelinking_get_plugins() {
     return $freelinking;
   }
   $freelinking = module_invoke_all('freelinking');
+  uasort($freelinking, '_freelinking_compare_weight');
   return $freelinking;
 }
 
@@ -444,6 +445,24 @@ function _freelinking_match_pattern($separator = NULL) {
   $option['markdown'] =
     '/(?<!\\\\)(\[([^\]]+)\]\((.+)(?:' . $separator . '(.+))?(?:\s"(.+)")?\))/Uu';
   return $option;
+}
+
+/**
+ * Compare weight between two plugins and return "lighter"
+ * Used by freelinking_get_plugins()
+ */
+function _freelinking_compare_weight($a, $b) {
+  if (!$a['weight']) {
+    $a['weight'] = 0;
+  }
+  if (!$b['weight']) {
+    $b['weight'] = 0;
+  }
+
+  if ($a['weight'] == $b['weight']) {
+    return 0;
+  }
+  return ($a['weight'] < $b['weight']) ? -1 : 1;
 }
 
 // vim: tw=300 nowrap syn=php
