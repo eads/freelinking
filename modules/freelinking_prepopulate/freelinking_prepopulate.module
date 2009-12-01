@@ -23,7 +23,7 @@ function freelinking_prepopulate_freelinking() {
  * Ultimate default: [[create:pagetitle]] =>
  * <a href="node/add/page?edit[title]=pagetitle>pagetitle</a>
  */
-function freelinking_prepopulate_node_callback($target) {
+function freelinking_prepopulate_node_callback($target, $plugin) {
   // use specified node type or fallback to configuration
   if ($target['other']['type']) {
     $node_type = $target['other']['type'];

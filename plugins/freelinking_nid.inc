@@ -17,7 +17,7 @@ $freelinking['nid'] = array(
   'run on view' => TRUE,
 );
 
-function freelinking_nid_callback($target) { // resolve $target into a link to the node or display failure
+function freelinking_nid_callback($target, $plugin) { // resolve $target into a link to the node or display failure
   if (!is_numeric($target['dest'])) {
     return array('error' =>
       t('Invalid Node ID "!nid"', array('!nid' => $target['dest']))

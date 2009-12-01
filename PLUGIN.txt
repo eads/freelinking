@@ -117,6 +117,13 @@ element defines an array, with the following elements:
   localization as demonstrated below. This is used in the extended filter tips, and the 
   default plugin's description is added to the short tips.
 
+* 'weight' [OPTIONAL]
+  Specify the weight to determine sort order. Otherwise counts as "0".
+
+* 'enabled' [OPTIONAL]
+  If set to FALSE, the indicator for the plugin will be ignored. As such, syntax
+  in the text will not activate the plugin. (Though failover will still be able to.)
+
 So, a simple freelinking plugin only needs to include this array. Here's
 an entire plugin one might see in a .inc file (freelinking_drupalproject.inc, in fact):
     $freelinking['drupalproject'] => array(

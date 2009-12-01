@@ -15,7 +15,7 @@ $freelinking['drupalorgnid'] = array(
 );
 
 
-function freelinking_drupalorgnid_callback($target) { // resolve nid to a node title
+function freelinking_drupalorgnid_callback($target, $plugin) { // resolve nid to a node title
   if (!is_numeric($target['dest'])) {
     return array('error' =>
       t('Invalid Node ID !nid', array('!nid' => $target['dest'])));
@@ -42,7 +42,7 @@ function freelinking_drupalorgnid_callback($target) { // resolve nid to a node t
 } // endfunction freelinking_drupalorgnid_callback
 
 function freelinking_drupalorgnid_settings() {
-  $form['drupalorgnid']['drupalorgnid_http_request'] = array(
+  $form['drupalorgnid_http_request'] = array(
     '#type' => 'checkbox',
     '#title' => t('Get node title'),
     '#default_value' => variable_get('drupalorgnid_http_request', TRUE),

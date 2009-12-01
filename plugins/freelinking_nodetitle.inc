@@ -9,7 +9,7 @@
  */
 
 $freelinking['nodetitle'] = array(
-  'indicator' => '/n(t|odetitle)/',
+  'indicator' => '/nt|nodetitle|title/',
   'callback' => 'freelinking_nodetitle_callback',
   'tip' => t('Link to a local node by title'),
   'run on view' => TRUE,
@@ -18,7 +18,7 @@ $freelinking['nodetitle'] = array(
 /**
  * Replacement callback for nodetitle plugin
  */
-function freelinking_nodetitle_callback($target) {
+function freelinking_nodetitle_callback($target, $plugin) {
   // Identify and remove language argument (de:Pagename)
   if (preg_match('/^(\w\w):/', $target['dest'], $matches)) {
     $language = $matches[1];
@@ -51,7 +51,7 @@ function freelinking_nodetitle_callback($target) {
  */
 function freelinking_nodetitle_settings() {
   // Restrict nodetitle plugin to search specified content type
-  $form['nodetitle']['freelinking_nodetitle_searchcontenttype'] = array(
+  $form['freelinking_nodetitle_searchcontenttype'] = array(
     '#title' => t('Restrict freelinks to this content type'),
     '#type'  => 'select',
     '#options' => array_merge(array('none' => t('No restriction')), node_get_types('names')),
@@ -87,7 +87,7 @@ function freelinking_nodetitle_settings() {
   }
   $failover_option['error'] = t('Insert an error message');
 
-  $form['nodetitle']['freelinking_nodetitle_notfoundaction'] = array(
+  $form['freelinking_nodetitle_notfoundaction'] = array(
     '#title' => t('If a suitable content is not found'),
     '#type' => 'select',
     '#options' => $failover_option,

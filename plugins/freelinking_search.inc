@@ -21,7 +21,7 @@ $freelinking['google'] = array(
   'tip' => t('Search google for the specified terms.'),
 );
 
-function freelinking_search_callback($target) {
+function freelinking_search_callback($target, $plugin) {
   global $base_url;
   $link = array();
   $failover = variable_get('freelinking_search_failover', 'error');
@@ -49,7 +49,7 @@ function freelinking_search_callback($target) {
  * Settings callback for Search plugin
  */
 function freelinking_search_settings() {
-  $form['search']['freelinking_search_failover'] = array(
+  $form['freelinking_search_failover'] = array(
     '#type' => 'select',
     '#title' => t('Failover Option'),
     '#default_value' => variable_get('freelinking_search_failover', 'error'),
@@ -62,7 +62,7 @@ function freelinking_search_settings() {
 /**
  * Replacement callback for Google plugin
  */
-function freelinking_google_callback($target) {
+function freelinking_google_callback($target, $plugin) {
   global $language;
   if (!$language) {
     $lang = 'en';
