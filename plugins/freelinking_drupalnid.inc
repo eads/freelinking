@@ -12,6 +12,7 @@ $freelinking['drupalorgnid'] = array(
   'indicator' => '/d(rupal)?o(rg)?/',
   'callback' => 'freelinking_drupalorgnid_callback',
   'tip' => t('Link to a drupal.org node.'),
+  'failover' => array('hi', 'giy'),
 );
 
 
@@ -22,7 +23,7 @@ function freelinking_drupalorgnid_callback($target, $plugin) { // resolve nid to
   }
 
   $url = 'http://drupal.org/node/' . $target['dest'];
-  if (!$target['text'] && variable_get('drupalorgnid_http_request', TRUE)) {
+  if (!$target['text'] && variable_get('freelinking_drupalorgnid_http_request', TRUE)) {
     $result = drupal_http_request($url, array(), 'GET');
     $found_title = preg_match('/<h1.*>(.*)<\/h1>/', $result->data, $matches);
 
@@ -42,15 +43,13 @@ function freelinking_drupalorgnid_callback($target, $plugin) { // resolve nid to
 } // endfunction freelinking_drupalorgnid_callback
 
 function freelinking_drupalorgnid_settings() {
-  $form['drupalorgnid_http_request'] = array(
+  $form['freelinking_drupalorgnid_http_request'] = array(
     '#type' => 'checkbox',
     '#title' => t('Get node title'),
-    '#default_value' => variable_get('drupalorgnid_http_request', TRUE),
+    '#default_value' => variable_get('freelinking_drupalorgnid_http_request', TRUE),
     '#description' => t('Get node title from drupal.org.'),
   );
   return $form;
 }
 
-
 // vim:tw=300 nowrap syn=php
-

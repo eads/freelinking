@@ -124,6 +124,13 @@ element defines an array, with the following elements:
   If set to FALSE, the indicator for the plugin will be ignored. As such, syntax
   in the text will not activate the plugin. (Though failover will still be able to.)
 
+* 'failover' [OPTIONAL]
+  If this is set to an array, a select form will be built so the site 
+  administrator can determine a preferred failover action. This does nothing unless 
+  the developer follows up with variable_get('freelinking_pluginname_failover', 
+  'none') in the callback code. If you set it to a single value, that value will 
+  be displayed in a disabled textfield in the configuration of the plugin.
+
 So, a simple freelinking plugin only needs to include this array. Here's
 an entire plugin one might see in a .inc file (freelinking_drupalproject.inc, in fact):
     $freelinking['drupalproject'] => array(
@@ -177,6 +184,21 @@ use as examples.
   target, and either creates a link to that content, or a link to a node
   creation form to create that content. This plugin can be used as an
   example to manipulate the link target.
+
+### Failover
+Your plugin callbacks may specify a "failover" or fallback action in the event 
+they choke. Quick example: The specified node title cannot be found in the 
+database, so a link to create a node with that title is put in place.
+
+Plugins specify failover by returning array('plugin' => 'failover plugin'). The 
+failover plugin is then triggered to take over trying to process the target. You 
+can pass a modified target in this way by just adding 'target' => $target to the 
+return array. You may also specify array('error' => 'error message') to provide 
+an array message.
+
+You can use variable_get('freelinking_pluginname_failover', 'none') to get the 
+preferred failover for your plugin. This is based on the failover element in the 
+plugin definition or on creating a form element by that name in your settings.
 
 ### Settings
 

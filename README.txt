@@ -17,8 +17,9 @@ Freelinking 3 breaks from previous versions in some significant ways:
 * Freelinks made with the "nodetitle" plugin (which mimics the behavior
   of previous versions of freelinking) do not run through the
   'freelinking/' namespace.
-* FL3 requires the [prepopulate](http://drupal.org/project/prepopulate)
-  module for its "nodetitle" plugin.
+* FL3 offers a Freelinking Prepopulate submodule that provides a "create node"
+  plugin. Nodetitle may use this to provide links to create content that does
+  not exist. This submodule requires Prepopulate.
 * FL3 now provides partial support for alternate syntax modes, including
   double brackets, single brackets, and Markdown-style
   ([Title](indicator:target))

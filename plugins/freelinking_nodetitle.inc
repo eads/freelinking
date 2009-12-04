@@ -87,11 +87,11 @@ function freelinking_nodetitle_settings() {
   }
   $failover_option['error'] = t('Insert an error message');
 
-  $form['freelinking_nodetitle_notfoundaction'] = array(
+  $form['freelinking_nodetitle_failover'] = array(
     '#title' => t('If a suitable content is not found'),
     '#type' => 'select',
     '#options' => $failover_option,
-    '#default_value' => variable_get('freelinking_nodetitle_notfoundaction',
+    '#default_value' => variable_get('freelinking_nodetitle_failover',
       _freelinking_nodetitle_default_failover()),
     '#description' => t('What should freelinking do when the page is not found?')
       . $extra_description,
@@ -147,7 +147,7 @@ function _freelinking_nodetitle_get_nid_by_lang($title, $node_lang = NULL) {
  * Determining the proper failure response per plugin configuration
  */
 function _freelinking_nodetitle_failure($target) {
-  $failover = variable_get('freelinking_nodetitle_notfoundaction',
+  $failover = variable_get('freelinking_nodetitle_failover',
     _freelinking_nodetitle_default_failover());
 
   switch ($failover) {

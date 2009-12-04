@@ -25,8 +25,8 @@ function freelinking_prepopulate_freelinking() {
  */
 function freelinking_prepopulate_node_callback($target, $plugin) {
   // use specified node type or fallback to configuration
-  if ($target['other']['type']) {
-    $node_type = $target['other']['type'];
+  if ($target['type']) {
+    $node_type = $target['type'];
   }
   else {
     $node_type = variable_get('freelinking_prepopulate_node_type',
@@ -109,7 +109,7 @@ function freelinking_prepopulate_node_settings() {
   if (module_exists('og')) {
     $options['og'] = t('Same Organic Group audiences');
   }
-  $form['createnode']['freelinking_prepopulate_node_type'] = array(
+  $form['freelinking_prepopulate_node_type'] = array(
     '#type' => 'select',
     '#title' => t('Default Type to Create'),
     '#default_value' => variable_get('freelinking_prepopulate_node_type',
@@ -122,7 +122,7 @@ function freelinking_prepopulate_node_settings() {
     return $form;
   }
 
-  $form['createnode']['freelinking_prepopulate_node_advanced'] = array(
+  $form['freelinking_prepopulate_node_advanced'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Advanced Options'),
     '#default_value' => variable_get('freelinking_prepopulate_node_advanced', array()),

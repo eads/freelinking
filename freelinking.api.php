@@ -15,7 +15,7 @@
  *   The name of the plugin to be used to render the link.
  *
  * @param $target
- *   The target text extracted from the freelink. Arguments separated by |'s.
+ *   The target text extracted from the freelink. Array.
  *
  * @param $format
  *   The format id currently invoking the Freelinking filter. Might be used in
@@ -31,7 +31,6 @@
  * @see l()
  */
 function freelinking_get_freelink($plugin, $target, $format = NULL, $rendered = TRUE) {
-  $target = freelinking_parse_target($target);
   $plugins = freelinking_get_plugins($format);
   $link = _freelinking_build_freelink($plugins, $plugin, $target);
 
@@ -64,7 +63,7 @@ function freelinking_get_freelink($plugin, $target, $format = NULL, $rendered = 
  * @return
  *   An array of all plugins. Each plugin is itself an array.
  * 
- * @see PLUGIN.txt
+ * @see PLUGINS.txt
  */
 function freelinking_get_plugins($format = 'all') {
   static $plugins;
@@ -107,3 +106,37 @@ function freelinking_get_plugins($format = 'all') {
   $plugins[$format] = $freelinking;
   return $freelinking;
 } // end freelinking_get_plugins()
+
+
+
+/**
+ * Build a tooltip for internal content.
+ *
+ * Attempts to use description metatag, truncated to 200 characters.
+ *
+ * @param $type
+ *   Type of the Drupal object- such as node, comment, block.
+ *
+ * @param $id
+ *   ID of the Drupal object. Useful for querying.
+ */
+function freelinking_internal_tooltip($type, $id) {
+  switch ($type) {
+    case 'node':
+      if (module_exists('nodewords')) {
+        $metatags = nodewords_get('node', $id);
+        $description = $metatags['description'];
+      }
+      break;
+  }
+  $description = check_url($description);
+  return truncate_utf8($description, 200, FALSE, TRUE);
+}
+
+/**
+ * hook_freelinking()
+ */
+
+/**
+ * hook_freelink_alter()
+ */
