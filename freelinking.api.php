@@ -37,8 +37,11 @@ function freelinking_get_freelink($plugin, $target, $format = NULL, $rendered = 
   if (!$rendered || !is_array($link)) {
     return $link;
   }
-  if ($link['error']) {
-    return theme('freelink_error', $plugin_name, $link['error']);
+  if ($link['failover'] == 'error') {
+    return theme('freelink_error', $plugin_name, $link['message']);
+  }
+  if($link['failover'] == 'none') {
+    return FALSE;
   }
   return theme('freelink', $plugin_name, $link);
 }
@@ -91,7 +94,7 @@ function freelinking_get_plugins($format = 'all') {
     if ($plugin_enabled) {
       $plugin['enabled'] = $plugin_enabled;
     }
-    
+
     // Rearrange weight scheme to use core comparison function.
     $plugin['#weight'] = $plugin['weight'];
     unset($plugin['weight']);
@@ -133,10 +136,78 @@ function freelinking_internal_tooltip($type, $id) {
   return truncate_utf8($description, 200, FALSE, TRUE);
 }
 
+
 /**
- * hook_freelinking()
+ * Get a configuration value for the current text being processed.
+ * Configuration values may vary by format, or fall back to a general default.
+ * 
+ * This allows the current value to be accessed without bouncing $format into
+ * every plugin.
+ * 
+ * @param $name
+ *   Get the setting from those tracked in freelinking_set_conf().
+ *
+ * @return
+ *   A string of the value.
+ *
+ * @see freelinking_set_conf()
+ */
+function freelinking_get_conf($name) {
+  return freelinking_set_conf($name);
+}
+
+/**
+ * Calculate a configuration value based on a precedence of existing variables.
+ * Format-specific before Freelinking before Drupal-wide.
+ * 
+ * @param $name
+ *   Set the named setting. Examples:
+ *   - 'cache': boolean. True indicates the filter cache should be turned on.
+ *   - 'default_match': String. Mode of default syntax for freelinking.
+ *
+ * @param $format
+ *   Calculate the setting for the specified format. If the format is not specified,
+ *   will return the value from memory without calculating.
+ *
+ * @return
+ *   String of the computed value.
+ */
+function freelinking_set_conf($name, $format = NULL, $reset = FALSE) {
+  static $conf;
+  
+  if ($conf[$name] && !$format) {
+    return $conf[$name];
+  }
+  
+  // Specific format -> Freelinking Global -> Format Settings
+  if ($name == 'cache') {
+    $conf[$name] = variable_get('freelinking_' . $name . '_format_' . $format,
+      variable_get('freelinking_' . $name, filter_format_allowcache($format)));
+  }
+  else {
+    $conf[$name] = variable_get('freelinking_' . $name . '_format_' . $format,
+      variable_get('freelinking_' . $name, FALSE));
+  }
+
+  return $conf[$name];
+}
+
+/**
+ * hook_freelinking() is used to define plugins or add new values to plugins.
+ *
+ * For more on creating or modifying plugins, check the documentation.
+ *
+ * @see http://drupal.org/node/???
  */
 
 /**
- * hook_freelink_alter()
+ * hook_freelink_alter() is used to modify the array of link values
+ * that are eventually passed on to the theme functions to become links.
+ *
+ * Error messages and strings returned from plugins are not processed by 
+ * this hook. Errors are directly themed and returned, and strings are
+ * simply passed back to the text. (In the latter "mode", freelinking
+ * could be used to generate something other than a link.)
+ *
+ * @see http://drupal.org/node/???
  */

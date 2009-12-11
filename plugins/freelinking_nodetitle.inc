@@ -19,14 +19,9 @@ $freelinking['nodetitle'] = array(
  * Replacement callback for nodetitle plugin
  */
 function freelinking_nodetitle_callback($target, $plugin) {
-  // Identify and remove language argument (de:Pagename)
-  if (preg_match('/^(\w\w):/', $target['dest'], $matches)) {
-    $language = $matches[1];
-    $target['dest'] = drupal_substr($target['dest'], 3);
-  }
   // get the nid and best guess at language for the title.
   list($nid, $language) =
-    _freelinking_nodetitle_get_nid_by_lang($target['dest'], $language);
+    _freelinking_nodetitle_get_nid_by_lang($target);
 
   // if no node was found, identify proceed with configured failover
   if (!$nid) {
@@ -103,20 +98,28 @@ function freelinking_nodetitle_settings() {
  * Grab the nid associated with the title.
  * Attempt some degree of language sensibility
  */
-function _freelinking_nodetitle_get_nid_by_lang($title, $node_lang = NULL) {
-  global $language;
+function _freelinking_nodetitle_get_nid_by_lang($target) {
+  $title = $target['dest'];
+  if ($target['type']) {
+    $type = check_plain($target['type']);
+  }
+  else {
+    $type = variable_get('freelinking_nodetitle_searchcontenttype', 'none');
+  }
 
   // Run a language-sensitive query
   if (module_exists('locale')) {
-    // if a language is specified, ignore the global
-    if ($node_lang) {
-      $language = $node_lang;
+    $language = default_language('language');
+    // Identify and remove language argument (de:Pagename)
+    if (preg_match('/^(\w\w):/', $target['dest'], $matches)) {
+      $language = $matches[1];
+      $target['dest'] = drupal_substr($target['dest'], 3);
     }
+
     $sql = "SELECT nid, language FROM {node} WHERE title = '%s' and language = '%s'";
-    if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') {
+    if ($type && $type != 'none') {
       $sql .= " AND type = '%s'";
-      $result = db_query($sql, $title, $language,
-        variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
+      $result = db_query($sql, $title, $language, $type);
     }
     else {
       $result = db_query($sql, $title, $language);
@@ -125,10 +128,9 @@ function _freelinking_nodetitle_get_nid_by_lang($title, $node_lang = NULL) {
   // if locale does not exist or it provided an empty result, get anything.
   if (empty($result)) {
     $sql = "SELECT nid FROM {node} WHERE title = '%s'";
-    if (variable_get('freelinking_nodetitle_searchcontenttype', 'none') != 'none') {
+    if ($type && $type != 'none') {
       $sql .= " AND type = '%s'";
-      $result = db_query($sql, $title,
-        variable_get('freelinking_nodetitle_searchcontenttype'), 'none');
+      $result = db_query($sql, $title, $type);
     }
     else {
       $result = db_query($sql, $title);
@@ -152,11 +154,11 @@ function _freelinking_nodetitle_failure($target) {
 
   switch ($failover) {
     case 'create':
-      return array('plugin' => 'createnode');
+      return array('failover' => 'createnode');
     case 'search':
-      return array('plugin' => 'search');
+      return array('failover' => 'search');
     case 'error':
-      return array('error' => t('%title not found',
+      return array('failover' => 'error', 'message' => t('%title not found',
         array('%title' => $target['dest'])));
   }
   // do nothing

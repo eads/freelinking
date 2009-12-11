@@ -29,12 +29,12 @@ function freelinking_search_callback($target, $plugin) {
   if (!module_exists('search')) {
     if ($failover == 'error') {
       // send back an error message.
-      return array('error' => t('Search Unavailable'));
+      return array('failover' => 'error', 'message' => t('Search Unavailable'));
     }
     else {
       // specify a plugin for next effort
       $target['other']['site'] = $base_url;
-      return array('plugin' => $failover, 'target' => $target);
+      return array('failover' => $failover, 'target' => $target);
     }
   }
 

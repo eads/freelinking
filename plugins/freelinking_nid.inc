@@ -19,7 +19,7 @@ $freelinking['nid'] = array(
 
 function freelinking_nid_callback($target, $plugin) { // resolve $target into a link to the node or display failure
   if (!is_numeric($target['dest'])) {
-    return array('error' =>
+    return array('failover' => 'error', 'message' =>
       t('Invalid Node ID "!nid"', array('!nid' => $target['dest']))
     );
   }
@@ -32,7 +32,7 @@ function freelinking_nid_callback($target, $plugin) { // resolve $target into a 
 
   // Node not found for $nid.
   if (!$title) {
-    return array('error' =>
+    return array('failover' => 'error', 'message' =>
       t('Invalid Node ID "!nid"', array('!nid' => $target['dest']))
     );
   }
@@ -42,10 +42,9 @@ function freelinking_nid_callback($target, $plugin) { // resolve $target into a 
     $target['tooltip'] = freelinking_internal_tooltip('node', $target['dest']);
   }
 
-  $replacement =  array($title, 'node/' . $target['dest'], array(
+  return array($title, 'node/' . $target['dest'], array(
     'attributes' => array('title' => $target['tooltip']),
   ));
-  return $replacement;
 }
 
 // vim:tw=300 nowrap syn=php

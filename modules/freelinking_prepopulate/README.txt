@@ -13,5 +13,10 @@ field. With advanced configuration, it can also preload the currently viewed
 node's taxonomy, book parent, or organic group. These advanced fields only work
 when viewing text on a particular node page.
 
+## FL-P API
+The Freelinking Prepopulate API is intended to help with the centralized definition
+of form fields that may be of interest for Prepopulate-based plugins, and automating
+the process of extracting information for such fields.
+
 ## Maintainers
 Grayside <grayside@gmail.com> http://drupal.org/user/346868

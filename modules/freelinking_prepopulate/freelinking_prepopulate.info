@@ -6,3 +6,10 @@ core = 6.x
 dependencies[] = freelinking
 dependencies[] = prepopulate
 
+
+; Information added by drupal.org packaging script on 2009-11-25
+version = "6.x-3.x-dev"
+core = "6.x"
+project = "freelinking"
+datestamp = "1259150922"
+
