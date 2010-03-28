@@ -109,7 +109,7 @@ function _freelinking_nodetitle_get_nid_by_lang($target) {
 
   // Run a language-sensitive query
   if (module_exists('locale')) {
-    $language = default_language('language');
+    $language = language_default('language');
     // Identify and remove language argument (de:Pagename)
     if (preg_match('/^(\w\w):/', $target['dest'], $matches)) {
       $language = $matches[1];
