@@ -127,8 +127,10 @@ function freelinking_internal_tooltip($type, $id) {
   switch ($type) {
     case 'node':
       if (module_exists('nodewords')) {
-        $metatags = nodewords_get_tags('node', $id);
-        $description = $metatags['description'];
+        if (function_exists('nodewords_get_tags')) {
+          $metatags = nodewords_get_tags('node', $id);
+          $description = $metatags['description'];
+        }
       }
       break;
   }
