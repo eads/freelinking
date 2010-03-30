@@ -127,7 +127,7 @@ function freelinking_internal_tooltip($type, $id) {
   switch ($type) {
     case 'node':
       if (module_exists('nodewords')) {
-        $metatags = nodewords_get('node', $id);
+        $metatags = nodewords_get_tags('node', $id);
         $description = $metatags['description'];
       }
       break;
