@@ -96,7 +96,7 @@ function freelinking_nodetitle_settings() {
  * Grab the nid associated with the title.
  * Attempt some degree of language sensibility
  */
-function freelinking_nodetitle_nid_from_title($target) {
+function freelinking_nodetitle_nid_from_title(&$target) {
   $title = $target['dest'];
 
   // get any content type restriction
@@ -125,7 +125,12 @@ function freelinking_nodetitle_nid_from_title($target) {
   while ($res = db_fetch_object($result)) {
     $set[] = $res;
   }
+
   if (empty($set)) {
+    if ($restrict) {
+      $target['dest'] = $title;
+      $target['other']['prefix'] = $restrict;
+    }
     return NULL;
   }
 
@@ -162,9 +167,9 @@ function _freelinking_nodetitle_failure($target) {
 
   switch ($failover) {
     case 'create':
-      return array('failover' => 'createnode');
+      return array('failover' => 'createnode', 'target' => $target);
     case 'search':
-      return array('failover' => 'search');
+      return array('failover' => 'search', 'target' => $target);
     case 'error':
       return array('failover' => 'error', 'message' => t('%title not found',
         array('%title' => $target['dest'])));
