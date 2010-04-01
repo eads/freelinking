@@ -30,7 +30,7 @@ function freelinking_prepopulate_freelinking() {
 function freelinking_prepopulate_node_callback($target, $plugin) {
   // Use specified node type or fallback to configuration.
   if ($target['type']) {
-    $node_type = str_replace('_', '-', check_plain($target['type']));
+    $node_type = check_plain($target['type']);
   }
   else {
     $node_type = variable_get('freelinking_prepopulate_node_type',
@@ -49,7 +49,7 @@ function freelinking_prepopulate_node_callback($target, $plugin) {
   }
 
   // Generate basic link elements.
-  $url = 'node/add/' . $node_type;
+  $url = 'node/add/' . str_replace('_', '-', $node_type);
   $title = $target['text'] ? $target['text'] : $target['dest'];
   // This title is default for createnode, anything else (such as target['title']) will override it.
   $query['edit[title]'] = check_plain($target['dest']);
@@ -61,9 +61,9 @@ function freelinking_prepopulate_node_callback($target, $plugin) {
     }
   }
   else {
-    $query = freelinking_prepopulate_fields_from_page(
+    $query = array_merge($query, freelinking_prepopulate_fields_from_page(
       variable_get('freelinking_prepopulate_node_advanced', array())
-    );
+    ));
   }
 
   // Override query string from syntax.
@@ -75,7 +75,6 @@ function freelinking_prepopulate_node_callback($target, $plugin) {
       $query[$key] = $value;
     }
   }
-
   return array($title, $url, array(
     'query' => $query,
     'attributes' => array(

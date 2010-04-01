@@ -39,7 +39,8 @@ function freelinking_prepopulate_fields_from_page($fields, $plugin = 'nodecreate
   foreach($prepopulate[$index] as $field => $definition) {
     switch($field) {
       case 'og':
-        $query[$definition['prepopulate'] . '[]'] = og_get_group_context();
+        $group = og_get_group_context();
+        $query[$definition['prepopulate']] = $group->nid;
         break;
       case 'taxonomy':
         if (!$object->taxonomy) {
@@ -80,11 +81,7 @@ function freelinking_prepopulate_fields_from_array($plugin, $target) {
   foreach ($prepopulate as $field => $values) {
     // If it's an organic group, break the groups out to separate values.
     if ($field == 'og') {
-      // split on commas or whitespace
-      $groups = preg_split('/(,|\s+)/', $target[$field]);      
-      foreach ($groups as $key => $gid) {
-        $query[$values['prepopulate'] . '[' . $key . ']'] = $gid;
-      }
+      $query[$values['prepopulate']] = $target[$field];
     }
     // If it's a taxonomy, special handling of vocabulary is necessary.
     elseif ($field == 'taxonomy') {
@@ -97,11 +94,6 @@ function freelinking_prepopulate_fields_from_array($plugin, $target) {
       if (is_int($vocab)) {
         $query[$values['prepopulate'] . '[' . $vocab . ']'] = $terms;
       }
-// http://stackoverflow.com/questions/1639932/get-vocabulary-id-by-name      
-//      elseif {
-//        $query[$values['prepopulate'] . '[' .
-//           freelinking_prepopulate_vocabulary_by_name($vocab) . ']'] = $terms; 
-//      }
       else {
         $query[$values['prepopulate'] . '[1]'] = $terms;
       }
@@ -179,7 +171,7 @@ function freelinking_prepopulate_list_fields($plugin = 'nodecreate', $field = NU
     }
     if (module_exists('og')) {
       $fields['og'] = array('title' => t('Organic Group audience'),
-        'prepopulate' => 'gids');
+        'prepopulate' => 'gids[]');
       $plugins['nodecreate']['og'] = TRUE;
     }
     if (module_exists('locale')) {
