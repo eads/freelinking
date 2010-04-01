@@ -19,12 +19,10 @@ $freelinking['nodetitle'] = array(
  * Replacement callback for nodetitle plugin
  */
 function freelinking_nodetitle_callback($target, $plugin) {
-  // get the nid and best guess at language for the title.
-  list($nid, $language) =
-    _freelinking_nodetitle_get_nid_by_lang($target);
+  $node = freelinking_nodetitle_nid_from_title($target);
 
   // if no node was found, identify proceed with configured failover
-  if (!$nid) {
+  if (!$node) {
     return _freelinking_nodetitle_failure($target);
   }
 
@@ -32,12 +30,12 @@ function freelinking_nodetitle_callback($target, $plugin) {
   $title = $target['text'] ? $target['text'] : $target['dest'];
 
   if (!$target['tooltip']) {
-    $target['tooltip'] = freelinking_internal_tooltip('node', $nid);
+    $target['tooltip'] = freelinking_internal_tooltip('node', $node->nid);
   }
   // return link structure
-  return array($title, 'node/' . $nid, array(
+  return array($node->title, 'node/' . $node->nid, array(
     'attributes' => array('title' => $tooltip),
-    'language' => $language,
+    'language' => $node->language,
   ));
 }
 
@@ -98,51 +96,61 @@ function freelinking_nodetitle_settings() {
  * Grab the nid associated with the title.
  * Attempt some degree of language sensibility
  */
-function _freelinking_nodetitle_get_nid_by_lang($target) {
+function freelinking_nodetitle_nid_from_title($target) {
   $title = $target['dest'];
-  if ($target['type']) {
+
+  // get any content type restriction
+  if ($target['other']['type']) {
     $type = check_plain($target['type']);
   }
   else {
-    $type = variable_get('freelinking_nodetitle_searchcontenttype', 'none');
+    $type = variable_get('freelinking_nodetitle_searchcontenttype', none);
   }
 
-  // Run a language-sensitive query
+  // Get prefixing. Used by language restriction.
+  $prefix_expr = '/^([\w\d]+):/U';
+  if (preg_match($prefix_expr, $title, $matches)) {
+    $restrict = $matches[1];
+    $title = preg_replace($prefix_expr, '', $title);
+  }
+
+  $sql = "SELECT title, nid, language FROM {node} WHERE title='%s'";
+  if ($type != 'none') {
+    $sql .= " AND type='%s'";    
+    $result = db_query($sql, $title, $type);
+  }
+  $result = db_query($sql, $title);
+
+  $set = array();
+  while ($res = db_fetch_object($result)) {
+    $set[] = $res;
+  }
+  if (empty($set)) {
+    return NULL;
+  }
+
+  // language restriction. Includes next-best-language logic.
+  $language = array(language_default('language'), '');
   if (module_exists('locale')) {
-    $language = language_default('language');
-    // Identify and remove language argument (de:Pagename)
-    if (preg_match('/^(\w\w):/', $target['dest'], $matches)) {
-      $language = $matches[1];
-      $target['dest'] = drupal_substr($target['dest'], 3);
+    if ($target['other']['language']) {
+      array_unshift($language, $target['other']['language']);
     }
-
-    $sql = "SELECT nid, language FROM {node} WHERE title = '%s' and language = '%s'";
-    if ($type && $type != 'none') {
-      $sql .= " AND type = '%s'";
-      $result = db_query($sql, $title, $language, $type);
+    if ($restrict) {
+      array_unshift($language, $restrict);
     }
-    else {
-      $result = db_query($sql, $title, $language);
-    }
-  }
-  // if locale does not exist or it provided an empty result, get anything.
-  if (empty($result)) {
-    $sql = "SELECT nid FROM {node} WHERE title = '%s'";
-    if ($type && $type != 'none') {
-      $sql .= " AND type = '%s'";
-      $result = db_query($sql, $title, $type);
-    }
-    else {
-      $result = db_query($sql, $title);
+    foreach ($language as $priority) {
+      foreach ($set as $node) {
+        if ($priority == $node->language) {
+          $retn = $node;
+          break 2;
+        }
+      }
     }
   }
-  $node = db_fetch_object($result);
-  // get the nid and it's language
-  if (isset($node)) {
-    return array($node->nid, $node->language);
+  else {
+    $retn = $set[0];
   }
-
-  return;
+  return $retn;
 }
 
 /**

@@ -76,7 +76,9 @@ function freelinking_filter($op, $delta = 0, $format = -1,
           $target = $match[1];
         } // end default freelink
         else {
-          list($indicator, $target) = explode(':', $match[1]);
+          $delim = strpos($match[1], ':');
+          $indicator = substr($match[1], 0, $delim);
+          $target = substr($match[1], $delim+1);
           // find a plugin for the match
           foreach (array_keys($freelinking) as $plugin) {
             if ($plugin['enabled']
