@@ -100,18 +100,11 @@ function freelinking_nodetitle_nid_from_title(&$target) {
   $title = $target['dest'];
 
   // get any content type restriction
-  if ($target['other']['type']) {
+  if ($target['type']) {
     $type = check_plain($target['type']);
   }
   else {
     $type = variable_get('freelinking_nodetitle_searchcontenttype', none);
-  }
-
-  // Get prefixing. Used by language restriction.
-  $prefix_expr = '/^([\w\d]+):/U';
-  if (preg_match($prefix_expr, $title, $matches)) {
-    $restrict = $matches[1];
-    $title = preg_replace($prefix_expr, '', $title);
   }
 
   $sql = "SELECT title, nid, language FROM {node} WHERE title='%s'";
@@ -127,21 +120,14 @@ function freelinking_nodetitle_nid_from_title(&$target) {
   }
 
   if (empty($set)) {
-    if ($restrict) {
-      $target['dest'] = $title;
-      $target['other']['prefix'] = $restrict;
-    }
     return NULL;
   }
 
   // language restriction. Includes next-best-language logic.
   $language = array(language_default('language'), '');
   if (module_exists('locale')) {
-    if ($target['other']['language']) {
-      array_unshift($language, $target['other']['language']);
-    }
-    if ($restrict) {
-      array_unshift($language, $restrict);
+    if ($target['language']) {
+      array_unshift($language, $target['language']);
     }
     foreach ($language as $priority) {
       foreach ($set as $node) {
