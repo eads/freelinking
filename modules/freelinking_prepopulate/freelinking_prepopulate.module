@@ -10,7 +10,7 @@
  */
 
 require(drupal_get_path('module', 'freelinking_prepopulate')
-  . '/freelinking_prepopulate.api.php');
+  . '/freelinking_prepopulate.utilities.inc');
 
 function freelinking_prepopulate_freelinking() {
   $freelinking['createnode'] = array(

@@ -13,3 +13,10 @@ core = "6.x"
 project = "freelinking"
 datestamp = "1259150922"
 
+
+; Information added by drupal.org packaging script on 2010-03-31
+version = "6.x-3.x-dev"
+core = "6.x"
+project = "freelinking"
+datestamp = "1269994094"
+
