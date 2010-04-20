@@ -37,12 +37,16 @@ function freelinking_get_freelink($plugin, $target, $format = NULL, $rendered = 
     return $link;
   }
   if ($link['failover'] == 'error') {
-    return theme('freelink_error', $plugin_name, $link['message']);
+    return theme('freelink_error', $plugin, $link['message']);
   }
   if($link['failover'] == 'none') {
     return FALSE;
   }
-  return theme('freelink', $plugin_name, $link);
+
+  if (function_exists('theme_freelink_' . $plugin)) {
+    return theme('freelink_' . $plugin, $link);
+  }
+  return theme('freelink', $plugin, $link);
 }
 
 /**

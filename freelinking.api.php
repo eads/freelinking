@@ -60,3 +60,15 @@ function hook_freelink_alter(&$link, $target, $plugin_name, $plugin) {
     $link[2]['attributes']['class'] .= ' green';
   }
 }
+
+/**
+ * Individual modules may implement a theme_freelink_pluginname().
+ * Doing so will override the standard theme_freelink().
+ * Modules must still implement hook_theme to declare their theme function.
+ *
+ * In this example, the "pluginname" plugin is themed to become an image
+ * to the targeted URL, instead of a link.
+ */
+function theme_freelink_pluginname($link) {
+  return theme('image', $link[1], $link[0], $link[2]['attributes']['title']);
+}
