@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * Freelinking User Plugins
  *

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * Freelinking 3
  *

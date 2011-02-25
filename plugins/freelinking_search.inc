@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * Search Plugin for Freelinking
  *

@@ -260,5 +260,4 @@ This function renders an error message provided by a plugin for display in the p
 
 ---
 freelining.module by ea. Farris <eafarris@gmail.com>
-$Id$ 
 vim: tw=72 syn=mkd

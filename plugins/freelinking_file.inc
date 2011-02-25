@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 $freelinking['file'] = array(
   'indicator' => '/^file$/i',

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /** nid plugin for freelinking
  * Originially by [grayside](http://drupal.org/user/346868)
  * See http://drupal.org/node/486954

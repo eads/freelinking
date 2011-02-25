@@ -1,5 +1,4 @@
 # Freelinking Prepopulate
-$Id$
 
 Freelinking Prepopulate provides freelinking plugins that leverage the 
 Prepopulate module to link to Drupal form pages that are partially preloaded.

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * one inch frame plugin for freelinking
  *

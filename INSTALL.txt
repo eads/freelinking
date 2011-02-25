@@ -15,4 +15,3 @@
 
 ---
 freelinking.module by ea.Farris <eafarris@gmail.com>
-$Id$

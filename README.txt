@@ -40,5 +40,4 @@ As of Alpha-3, some features are still missing:
 * eafarris <eafarris@gmail.com> (Original Creator)
 * grayside <grayside@gmail.com>
 
-$Id$
 vim: tw=72 syn=mkd

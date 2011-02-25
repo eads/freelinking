@@ -1,4 +1,3 @@
-; $Id$
 name = Freelinking Prepopulate
 description = A Freelinking module providing Prepopulate-based plugins.
 package = Input filters

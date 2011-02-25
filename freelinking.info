@@ -1,4 +1,3 @@
-; $Id$ ;
 name = Freelinking
 description = A filter that allows flexible linking of content
 package = Input filters

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * Nodetitle plugin for Freelinking
  *
