@@ -103,19 +103,27 @@ function freelinking_filter($op, $delta = 0, $format = -1,
 
 /**
  * Implementation of hook_freelinking().
+ * 
  * Include plugins/*.inc plugins
  */
 function freelinking_freelinking() {
-  $files = file_scan_directory(
-    drupal_get_path('module', 'freelinking') . '/plugins/', '.inc');
-  foreach ($files as $absolute => $file) {
-    require $absolute;
+  static $included;
+  
+  if (empty($included)) {
+    $included = file_scan_directory(
+      drupal_get_path('module', 'freelinking') . '/plugins/', '.inc');
+    foreach ($included as $absolute => $file) {
+      require_once $absolute;
+    }
   }
+
+  // The freelinking variable is specified by included files.
   foreach ($freelinking as $plugin => $definition) {
     if (!$definition['settings']) {
       $freelinking[$plugin]['settings'] = 'freelinking_' . $plugin . '_settings';
     }
   }
+
   return $freelinking;
 }
 

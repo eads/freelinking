@@ -29,7 +29,7 @@
  *
  * @see l()
  */
-function freelinking_get_freelink($plugin, $target, $format = NULL, $rendered = TRUE) {
+function freelinking_get_freelink($plugin, $target, $format = 'all', $rendered = TRUE) {
   $plugins = freelinking_get_plugins($format);
   $link = _freelinking_build_freelink($plugins, $plugin, $target);
 
@@ -65,52 +65,55 @@ function freelinking_get_freelink($plugin, $target, $format = NULL, $rendered = 
  *   The Text Format ID of the currently processed piece of text. Allows 
  * format-specific plugin overrides such as disabling certain plugins in a given 
  * format. The default 'all' refers to the plugins as provided by hook_freelinking().
- * 
+ *
+ * @param $reset
+ *   (Default: FALSE) Reset the static cache.
  * @return
  *   An array of all plugins. Each plugin is itself an array.
  * 
  * @see PLUGINS.txt
  */
-function freelinking_get_plugins($format = 'all') {
+function freelinking_get_plugins($format = 'all', $reset = FALSE) {
   static $plugins;
-  if ($plugins[$format]) {
-    return $plugins[$format];
+
+  if (empty($plugins[$format]) || $reset) {
+    $freelinking = module_invoke_all('freelinking');
+  
+    // Validate & standardize plugins.
+    foreach ($freelinking as $name => &$plugin) {
+      // Confirm correct structure in plugin
+      if (!$plugin['indicator']
+        || (!$plugin['replacement'] && !$plugin['callback'])
+        || ($plugin['callback'] && !function_exists($plugin['callback']))) {
+          drupal_set_message(t('Freelinking plugin "!plugin" is invalid.',
+            array('!plugin' => $name)), 'warning');
+          watchdog('filter', 'Freelinking plugin "!plugin" is invalid.',
+            array('!plugin' => $name), WATCHDOG_WARNING);
+      } // end if
+      
+      // Set "enabled" by format when explicitly set in format configuration..
+      $plugin_enabled = variable_get(
+        'freelinking_' . $name . '_enabled_format_' . $format, ''
+      );
+      if ($plugin_enabled) {
+        $plugin['enabled'] = $plugin_enabled;
+      }
+  
+      // Rearrange weight scheme to use core comparison function.
+      $plugin['#weight'] = $plugin['weight'];
+      unset($plugin['weight']);
+  
+      // Set explicit defaults.
+      $plugin += array('enabled' => TRUE, 'html' => TRUE);
+    } // end foreach
+  
+    // element_sort() uses '#weight', the hash is added above to support this.
+    uasort($freelinking, 'element_sort');
+
+    $plugins[$format] = $freelinking;
   }
-  $freelinking = module_invoke_all('freelinking');
 
-  // Validate & standardize plugins.
-  foreach ($freelinking as $name => &$plugin) {
-    // Confirm correct structure in plugin
-    if (!$plugin['indicator']
-      || (!$plugin['replacement'] && !$plugin['callback'])
-      || ($plugin['callback'] && !function_exists($plugin['callback']))) {
-        drupal_set_message(t('Freelinking plugin "!plugin" is invalid.',
-          array('!plugin' => $name)), 'warning');
-        watchdog('filter', 'Freelinking plugin "!plugin" is invalid.',
-          array('!plugin' => $name), WATCHDOG_WARNING);
-    } // end if
-    
-    // Set "enabled" by format when explicitly set in format configuration..
-    $plugin_enabled = variable_get(
-      'freelinking_' . $name . '_enabled_format_' . $format, ''
-    );
-    if ($plugin_enabled) {
-      $plugin['enabled'] = $plugin_enabled;
-    }
-
-    // Rearrange weight scheme to use core comparison function.
-    $plugin['#weight'] = $plugin['weight'];
-    unset($plugin['weight']);
-
-    // Set explicit defaults.
-    $plugin += array('enabled' => TRUE, 'html' => TRUE);
-  } // end foreach
-
-  // element_sort() uses '#weight', the hash is added above to support this.
-  uasort($freelinking, 'element_sort');
-
-  $plugins[$format] = $freelinking;
-  return $freelinking;
+  return $plugins[$format];
 } // end freelinking_get_plugins()
 
 /**
