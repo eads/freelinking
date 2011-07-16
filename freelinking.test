@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * @file
+ * Unit tests for the freelinking Module.
+ */
+
+class FreelinkingUnitTest extends DrupalWebTestCase {
+  /*
+   * The getInfo() method provides information about the test.
+   * In order for the test to be run, the getInfo() method needs
+   * to be implemented.
+   */
+  public function getInfo() {
+    return array(
+      'name' => t('Feelinking tests'),
+      'description' => t('Tests main module functionality.'),
+      'group' => t('Freelinking'),
+    );
+  }
+
+  /*
+   * Implementing setUp() to enable truefalse module testing
+   */
+  function setUp() {
+    parent::setUp('freelinking');
+
+    // Create user
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'administer nodes',
+      'administer filters',
+    ));
+    $this->drupalLogin($this->privileged_user);
+
+    // Activate freelinking input filter
+    $edit = array(
+      'filters[freelinking/0]' => 1,
+    );
+    $this->drupalPost('admin/settings/filters/1', $edit, t('Save configuration'));
+    $this->assertText(t('The input format settings have been updated.'));
+    $this->drupalGet('admin/settings/filters/1');
+    $this->assertFieldChecked('edit-filters-freelinking/0', 'Freelinking input filter has been activated');
+  }
+
+  /**
+   * Check something in a functional case
+   */
+  public function testGetFreelink() {
+    // Create node that will be linked
+    $edit = array();
+    $edit['title'] = 'First page';
+    $edit['body'] = 'Body of first page';
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
+
+    // Create node that will contain the freelink
+    $edit = array();
+    $edit['title'] = 'Second page';
+    $edit['body'] = 'body of second page with link to [[First page]]';
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
+
+    $this->assertLink(t('First page'), 0, t('Nodetitle freelink was generated successfully.'));
+  }
+}
