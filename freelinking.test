@@ -63,6 +63,8 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
                     '  <li>One inch frame: [[oif:about-one-inch-frame]]</li>' .
                     '  <li>Nodetitle: [[nodetitle:First page]]</li>' .
                     '  <li>Search:    [[search:test]]</li>' .
+                    '  <li>Nid:       [[nid:1]]</li>' .
+                    '  <li>Drupal:    [[google:drupal]]</li>' .
                     '</ul>';
     $this->drupalPost('node/add/page', $edit, t('Save'));
     $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
@@ -77,5 +79,8 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     $this->assertLink(t('First page'), 0, t('Nodetitle freelink was generated successfully.'));
     $this->assertLinkByHref('/search/node/test', 0,
                             t('Search freelink was generated successfully.'));
+    $this->assertLink(t('First page'), 0, t('Nid freelink was generated successfully.'));
+    $this->assertLinkByHref('http://www.google.com/search?q=drupal&hl=en', 0,
+                            t('Google freelink was generated successfully.'));
   }
 }
