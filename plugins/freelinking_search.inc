@@ -78,8 +78,10 @@ function freelinking_google_callback($target, $plugin) {
   }
 
   $link = array($title, 'http://www.google.com/search', array(
-    'query' => array('q' => $target['dest']),
-    'fragment' => 'hl=' . $lang,
+    'query' => array(
+      'q'  => $target['dest'],
+      'hl' => $lang,
+    ),
     'external' => TRUE,
     'attributes' => array(
       'title' => t('Search Google for content like "%dest"',
