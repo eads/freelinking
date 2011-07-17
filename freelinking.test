@@ -19,11 +19,11 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     );
   }
 
-  /*
-   * Implementing setUp() to enable truefalse module testing
+  /**
+   * Prepares the testing environment enabling modules, creating a user and some test content.
    */
   function setUp() {
-    parent::setUp('freelinking');
+    parent::setUp('freelinking', 'search');
 
     // Create user
     $this->privileged_user = $this->drupalCreateUser(array(
@@ -39,27 +39,43 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     $this->drupalPost('admin/settings/filters/1', $edit, t('Save configuration'));
     $this->assertText(t('The input format settings have been updated.'));
     $this->drupalGet('admin/settings/filters/1');
-    $this->assertFieldChecked('edit-filters-freelinking/0', 'Freelinking input filter has been activated');
+    $this->assertFieldChecked('edit-filters-freelinking/0', 
+                              t('Freelinking input filter has been activated'));
+
+    // Create node that will be freelinked
+    $edit = array();
+    $edit['title'] = t('First page');
+    $edit['body'] = t('Body of first page');
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
   }
 
   /**
-   * Check something in a functional case
+   * Tests all plugins
    */
-  public function testGetFreelink() {
-    // Create node that will be linked
+  public function testFreelinkPlugins() {
+    // Create node that will contain a sample of each plugin
     $edit = array();
-    $edit['title'] = 'First page';
-    $edit['body'] = 'Body of first page';
+    $edit['title'] = t('Testing all freelinking plugins');
+    $edit['body'] = '<ul>' .
+                    '  <li>Drupalproject: [[drupalproject:freelinking]]</li>' .
+                    '  <li>Drupalorgnid: [[drupalorgnid:1]]</li>' .
+                    '  <li>One inch frame: [[oif:about-one-inch-frame]]</li>' .
+                    '  <li>Nodetitle: [[nodetitle:First page]]</li>' .
+                    '  <li>Search:    [[search:test]]</li>' .
+                    '</ul>';
     $this->drupalPost('node/add/page', $edit, t('Save'));
     $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
 
-    // Create node that will contain the freelink
-    $edit = array();
-    $edit['title'] = 'Second page';
-    $edit['body'] = 'body of second page with link to [[First page]]';
-    $this->drupalPost('node/add/page', $edit, t('Save'));
-    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
-
+    // Verify each freelink plugin
+    $this->assertLinkByHref('http://drupal.org/project/freelinking', 0,
+                            t('Drupalproject freelink was generated successfully.'));
+    $this->assertLink(t('Drupal.org Node: 1'), 0,
+                            t('Drupalorgnid freelink was generated successfully.'));
+    $this->assertLinkByHref('http://oif.eafarris.com/wiki/about-one-inch-frame', 0,
+                            t('One inch frame freelink was generated successfully.'));
     $this->assertLink(t('First page'), 0, t('Nodetitle freelink was generated successfully.'));
+    $this->assertLinkByHref('/search/node/test', 0,
+                            t('Search freelink was generated successfully.'));
   }
 }
