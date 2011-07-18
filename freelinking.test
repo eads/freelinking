@@ -42,12 +42,19 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     $this->assertFieldChecked('edit-filters-freelinking/0', 
                               t('Freelinking input filter has been activated'));
 
-    // Create node that will be freelinked
+    // Create a couple of pages which will be freelinked
     $edit = array();
     $edit['title'] = t('First page');
     $edit['body'] = t('Body of first page');
     $this->drupalPost('node/add/page', $edit, t('Save'));
     $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
+
+    $edit = array();
+    $edit['title'] = t('Second page');
+    $edit['body'] = t('Body of second page');
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
+
   }
 
   /**
@@ -58,13 +65,23 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     $edit = array();
     $edit['title'] = t('Testing all freelinking plugins');
     $edit['body'] = '<ul>' .
-                    '  <li>Drupalproject: [[drupalproject:freelinking]]</li>' .
-                    '  <li>Drupalorgnid: [[drupalorgnid:1]]</li>' .
+                    '  <li>Drupalproject:  [[drupalproject:freelinking]]</li>' .
+                    '  <li>Drupalorgnid:   [[drupalorgnid:1]]</li>' .
                     '  <li>One inch frame: [[oif:about-one-inch-frame]]</li>' .
-                    '  <li>Nodetitle: [[nodetitle:First page]]</li>' .
-                    '  <li>Search:    [[search:test]]</li>' .
-                    '  <li>Nid:       [[nid:1]]</li>' .
-                    '  <li>Drupal:    [[google:drupal]]</li>' .
+                    '  <li>Nodetitle:      [[nodetitle:First page]]</li>' .
+                    '  <li>Search:         [[search:test]]</li>' .
+                    '  <li>Nid:            [[nid:2]]</li>' .
+                    '  <li>Drupal:         [[google:drupal]]</li>' .
+                    '  <li>Image:          TODO</li>' .
+                    '  <li>File:           TODO</li>' .
+                    '  <li>Wikisource:     [[wikisource:Main_Page]]</li>' .
+                    '  <li>Wiktionary:     [[wiktionary:Wiktionary:Main_Page]]</li>' .
+                    '  <li>Wikiquote:      [[wikiquote:Main_Page]]</li>' .
+                    '  <li>Wikibooks:      [[wikibooks:Main_Page]]</li>' .
+                    '  <li>Wikinews:       [[wikinews:Main_Page]]</li>' .
+                    '  <li>User:           [[u:' . $this->privileged_user->uid . ']]</li>' .
+                    '  <li>Path:           [[path:/node/1]]</li>' .
+                    '  <li>Wikipedia:      [[wikipedia:Main_Page]]</li>' .
                     '</ul>';
     $this->drupalPost('node/add/page', $edit, t('Save'));
     $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
@@ -72,15 +89,32 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     // Verify each freelink plugin
     $this->assertLinkByHref('http://drupal.org/project/freelinking', 0,
                             t('Drupalproject freelink was generated successfully.'));
-    $this->assertLink(t('Drupal.org Node: 1'), 0,
+    $this->assertLinkByHref('http://drupal.org/node/1', 0,
                             t('Drupalorgnid freelink was generated successfully.'));
     $this->assertLinkByHref('http://oif.eafarris.com/wiki/about-one-inch-frame', 0,
                             t('One inch frame freelink was generated successfully.'));
     $this->assertLink(t('First page'), 0, t('Nodetitle freelink was generated successfully.'));
     $this->assertLinkByHref('/search/node/test', 0,
                             t('Search freelink was generated successfully.'));
-    $this->assertLink(t('First page'), 0, t('Nid freelink was generated successfully.'));
+    $this->assertLink(t('Second page'), 0, t('Nid freelink was generated successfully.'));
     $this->assertLinkByHref('http://www.google.com/search?q=drupal&hl=en', 0,
                             t('Google freelink was generated successfully.'));
+    $this->assertLinkByHref('http://en.wikisource.org/wiki/Main_Page', 0,
+                            t('Wikisource freelink was generated successfully.'));
+    $this->assertLinkByHref('http://en.wiktionary.org/wiki/Wiktionary:Main_Page', 0,
+                            t('Wiktionary freelink was generated successfully.'));
+    $this->assertLinkByHref('http://en.wikiquote.org/wiki/Main_Page', 0,
+                            t('Wikiquote freelink was generated successfully.'));
+    $this->assertLinkByHref('http://en.wikibooks.org/wiki/Main_Page', 0,
+                            t('Wikibooks freelink was generated successfully.'));
+    $this->assertLinkByHref('http://en.wikinews.org/wiki/Main_Page', 0,
+                            t('Wikinews freelink was generated successfully.'));
+    $this->assertLinkByHref('http://en.wikinews.org/wiki/Main_Page', 0,
+                            t('Wikinews freelink was generated successfully.'));
+    $this->assertLink($this->privileged_user->name, 0, 
+                      t('User freelink was generated successfully.'));
+    $this->assertLink(t('First page'), 1, t('Path freelink was generated successfully.'));
+    $this->assertLinkByHref('http://en.wikipedia.org/wiki/Main_Page', 0,
+                            t('Wikipedia freelink was generated successfully.'));
   }
 }
