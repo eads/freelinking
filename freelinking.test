@@ -55,6 +55,13 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     $this->drupalPost('node/add/page', $edit, t('Save'));
     $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
 
+    // Upload Drupal logo to files directory to test file and image plugins
+    $root_path = $_SERVER['DOCUMENT_ROOT'];
+    $image = $root_path . '/themes/garland/logo.png';
+    file_copy($image);
+    $this->assertTrue(is_string(file_check_location('logo.png')),
+                      t('Image @image was saved successfully',
+                        array('@image' => $image)));
   }
 
   /**
@@ -71,9 +78,9 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
                     '  <li>Nodetitle:      [[nodetitle:First page]]</li>' .
                     '  <li>Search:         [[search:test]]</li>' .
                     '  <li>Nid:            [[nid:2]]</li>' .
-                    '  <li>Drupal:         [[google:drupal]]</li>' .
-                    '  <li>Image:          TODO</li>' .
-                    '  <li>File:           TODO</li>' .
+                    '  <li>Google:         [[google:drupal]]</li>' .
+                    '  <li>Image:          [[image:logo.png]]</li>' .
+                    '  <li>File:           [[image:logo.png]]</li>' .
                     '  <li>Wikisource:     [[wikisource:Main_Page]]</li>' .
                     '  <li>Wiktionary:     [[wiktionary:Wiktionary:Main_Page]]</li>' .
                     '  <li>Wikiquote:      [[wikiquote:Main_Page]]</li>' .
@@ -99,6 +106,8 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
     $this->assertLink(t('Second page'), 0, t('Nid freelink was generated successfully.'));
     $this->assertLinkByHref('http://www.google.com/search?q=drupal&hl=en', 0,
                             t('Google freelink was generated successfully.'));
+    $this->assertLink('logo.png', 0, t('Image freelink was generated successfully.'));
+    $this->assertLink('logo.png', 1, t('File freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wikisource.org/wiki/Main_Page', 0,
                             t('Wikisource freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wiktionary.org/wiki/Wiktionary:Main_Page', 0,
