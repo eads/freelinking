@@ -5,7 +5,7 @@
  * Unit tests for the freelinking Module.
  */
 
-class FreelinkingUnitTest extends DrupalWebTestCase {
+class FreelinkingTest extends DrupalWebTestCase {
   /*
    * The getInfo() method provides information about the test.
    * In order for the test to be run, the getInfo() method needs
@@ -67,7 +67,7 @@ class FreelinkingUnitTest extends DrupalWebTestCase {
   /**
    * Tests all plugins
    */
-  public function testFreelinkPlugins() {
+  public function testFreelinkingPlugins() {
     // Create node that will contain a sample of each plugin
     $edit = array();
     $edit['title'] = t('Testing all freelinking plugins');
