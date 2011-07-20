@@ -59,7 +59,7 @@ class FreelinkingTest extends DrupalWebTestCase {
     $root_path = $_SERVER['DOCUMENT_ROOT'];
     $image = $root_path . '/themes/garland/logo.png';
     file_copy($image);
-    $this->assertTrue(is_string(file_check_location('logo.png')),
+    $this->assertTrue(is_string(drupal_realpath('public://logo.png')),
                       t('Image @image was saved successfully',
                         array('@image' => $image)));
   }
