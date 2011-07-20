@@ -109,13 +109,13 @@ function freelinking_nodetitle_nid_from_title(&$target) {
   $sql = "SELECT title, nid, language FROM {node} WHERE title='%s'";
   if ($type != 'none') {
     $sql .= " AND type='%s'";
-    $result = db_query($sql, $title, $type);
+    $result = db_query($sql, array($title, $type));
   }
-  $result = db_query($sql, $title);
+  $result = db_query($sql, array($title));
 
   $set = array();
-  while ($res = db_fetch_object($result)) {
-    $set[] = $res;
+  foreach ($result as $record) {
+    $set[] = $record;
   }
 
   if (empty($set)) {

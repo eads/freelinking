@@ -30,7 +30,7 @@ function freelinking_nid_callback($target, $plugin) { // resolve $target into a 
   $sql = 'SELECT title FROM {node} WHERE nid = "%s" ';
   $result = db_query('SELECT title FROM {node} WHERE nid = :nid ', array(':nid' => $target['dest']));
 
-  while ($node = db_fetch_object($result)) { // should be only one
+  foreach ($result as $node) { // should be only one
     $title = $node->title;
   } // endwhile looping through (one) node
 

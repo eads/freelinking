@@ -41,7 +41,6 @@ function freelinking_filter_info() {
   $filters['freelinking'] = array(
     'title' => t('Freelinking'),
     'description' => t('Allows for a flexible format for linking content'),
-    'prepare callback' => '_freelinking_prepare',
     'process callback' => '_freelinking_process',
     'tips callback' => '_freelinking_tips',
   );
@@ -49,14 +48,10 @@ function freelinking_filter_info() {
 } 
 
 /**
- * Implements filter prepare callback
- */
-function _freelinking_prepare() {}
-
-/**
  * Implements filter process callback
  */
-function _freelinking_process() {
+function _freelinking_process($text, $filter) {
+  watchdog('debug', print_r(array($text, $filter), TRUE));
   $freelinking = freelinking_get_plugins();
   $defaultplugin = variable_get('freelinking_default', 'nodetitle');
   $syntax = variable_get('freelinking_match_syntax', 'double_bracket');
