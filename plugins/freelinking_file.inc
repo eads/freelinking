@@ -33,7 +33,7 @@ function freelinking_file_file_callback($target, $plugin) {
   }
 
   $check_path = $path;
-  if (!file_check_path($check_path)) {
+  if (!file_prepare_directory($check_path)) {
     return array(
       'failover' => 'error',
       'message' => t('File Not Found'),
