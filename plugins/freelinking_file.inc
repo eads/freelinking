@@ -23,7 +23,7 @@ function freelinking_file_file_callback($target, $plugin) {
       $path = $target['other']['file_path'];
     }
     else {
-      $path = variable_get('freelinking_file_file_path', file_directory_path());
+      $path = variable_get('freelinking_file_file_path', file_default_scheme() . ':/');
     }
     $path .= '/' . $target['dest'];
   }
@@ -67,7 +67,7 @@ function freelinking_file_image_callback($target, $plugin) {
  * @see http://drupal.org/node/1354
  */
 function freelinking_file_file_settings() {
-  $path = file_directory_path();
+  $path = file_default_scheme() . ':/';
   $form['freelinking_file_file_path'] = array(
     '#title' => t('File Basepath'),
     '#type' => 'textfield',
@@ -83,7 +83,7 @@ function freelinking_file_file_settings() {
  * @see http://drupal.org/node/1354
  */
 function freelinking_file_image_settings() {
-  $path = file_directory_path();
+  $path = file_default_scheme() . ':/';
   $form['freelinking_file_image_path'] = array(
     '#title' => t('Image Basepath'),
     '#type' => 'textfield',

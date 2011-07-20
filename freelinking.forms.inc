@@ -1,7 +1,5 @@
 <?php
 /**
- * Freelinking 3
- *
  * @file
  *   Constructs freelinking & module admin forms.
  */
