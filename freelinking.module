@@ -1,7 +1,5 @@
 <?php
 /**
- * Freelinking 3
- *
  * @file
  *   Provides flexible, extensible linking of content, wiki-style
  */
@@ -30,82 +28,131 @@ function freelinking_permission() {
   return array(
     'administer freelinking' => array(
       'title' => t('administer freelinking'),
-      'description' => t('TODO Add a description for \'administer freelinking\''),
+      'description' => t('Allows configuring module and per plugin settings.'),
     ),
   );
 }
 
 /**
- * Implements hook_filter().
+* Implements hook_filter_info().
+*/
+function freelinking_filter_info() {
+  $filters = array();
+  $filters['freelinking'] = array(
+    'title' => t('Freelinking'),
+    'description' => t('Allows for a flexible format for linking content'),
+    'prepare callback' => '_freelinking_prepare',
+    'process callback' => '_freelinking_process',
+    'tips callback' => '_freelinking_tips',
+  );
+  return $filters;
+} 
+
+/**
+ * Implements filter prepare callback
  */
-function freelinking_filter_XXX($op, $delta = 0, $format = -1,
-  $text = '', $langcode = '', $cache_id = 0) {
+function _freelinking_prepare() {}
 
-  switch ($op) {
-    case 'list':
-      return array(0 => 'freelinking filter');
-    case 'no cache':
-      return !freelinking_get_conf('cache');
-    case 'description':
-      return t('Allows for a flexible format for linking content');
-    case 'process':
-      $freelinking = freelinking_get_plugins();
-      $defaultplugin = variable_get('freelinking_default', 'nodetitle');
-      $syntax = variable_get('freelinking_match_syntax', 'double_bracket');
-      $regex = _freelinking_match_pattern();
+/**
+ * Implements filter process callback
+ */
+function _freelinking_process() {
+  $freelinking = freelinking_get_plugins();
+  $defaultplugin = variable_get('freelinking_default', 'nodetitle');
+  $syntax = variable_get('freelinking_match_syntax', 'double_bracket');
+  $regex = _freelinking_match_pattern();
 
-      // Loop through every freelink format
-      // Space at text start prevents match failure at start.
-      preg_match_all($regex[$syntax], ' ' . $text, $matches, PREG_SET_ORDER);
+  // Loop through every freelink format
+  // Space at text start prevents match failure at start.
+  preg_match_all($regex[$syntax], ' ' . $text, $matches, PREG_SET_ORDER);
 
-      foreach ($matches as $match) {
-        $current_plugin = '';
+  foreach ($matches as $match) {
+    $current_plugin = '';
 
-        // in markdown mode, the first match is part of the target.
-        // This is hacky and temporary while matching is in transition.
-        if ($syntax == 'markdown') {
-          if (!$match[4]) {
-            $match[4] = $match[3];
-          }
-          else {
-            $match[4] = $match[3] . ':' . $match[4];
-          }
-          // encode pipes in Title.
-          $match[2] = urlencode($match[2]);
-          $match[1] = $match[4] . '|' . $match[2] . '|' . $match[5];
-        }
+    // in markdown mode, the first match is part of the target.
+    // This is hacky and temporary while matching is in transition.
+    if ($syntax == 'markdown') {
+      if (!$match[4]) {
+        $match[4] = $match[3];
+      }
+      else {
+        $match[4] = $match[3] . ':' . $match[4];
+      }
+      // encode pipes in Title.
+      $match[2] = urlencode($match[2]);
+      $match[1] = $match[4] . '|' . $match[2] . '|' . $match[5];
+    }
 
-        // default freelink (no colon)
-        if (strpos($match[1], ':') === FALSE) {
-          $current_plugin = $defaultplugin;
-          $target = $match[1];
-        } // end default freelink
-        else {
-          $delim = strpos($match[1], ':');
-          $indicator = substr($match[1], 0, $delim);
-          $target = substr($match[1], $delim + 1);
-          // find a plugin for the match
-          foreach (array_keys($freelinking) as $plugin) {
-            if ($plugin['enabled']
-               && preg_match($freelinking[$plugin]['indicator'], $indicator)) {
-              $current_plugin = $plugin;
-            }
-          }
-          // end looping through plugins
-        } // end non-default freelinks
-        $target = freelinking_parse_target($target, $current_plugin);
-        $link = freelinking_get_freelink($current_plugin, $target);
-
-        if ($link) {
-          $text = str_replace($match[0], $link, $text);
+    // default freelink (no colon)
+    if (strpos($match[1], ':') === FALSE) {
+      $current_plugin = $defaultplugin;
+      $target = $match[1];
+    } // end default freelink
+    else {
+      $delim = strpos($match[1], ':');
+      $indicator = substr($match[1], 0, $delim);
+      $target = substr($match[1], $delim + 1);
+      // find a plugin for the match
+      foreach (array_keys($freelinking) as $plugin) {
+        if ($plugin['enabled']
+           && preg_match($freelinking[$plugin]['indicator'], $indicator)) {
+          $current_plugin = $plugin;
         }
       }
-      return $text;
-    case 'prepare':
-    default:
-      return $text;
-  } // endswitch $op
-} // endfunction freelinking_filter
+      // end looping through plugins
+    } // end non-default freelinks
+    $target = freelinking_parse_target($target, $current_plugin);
+    $link = freelinking_get_freelink($current_plugin, $target);
+
+    if ($link) {
+      $text = str_replace($match[0], $link, $text);
+    }
+  }
+  return $text;
+}
+
+
+/**
+ * Implements filter tips callback
+ */
+function _freelinking_tips($delta, $format, $long = FALSE) {
+  $syntax = variable_get('freelinking_syntax_mode', 'double_bracket');
+  if ($syntax == 'double_bracket') {
+    $pattern = '<tt>[[indicator:target|Title]]</tt>';
+  }
+  elseif ($syntax == 'markdown') {
+    $pattern = '<tt>[Title](indicator:target)</tt>';
+  }
+  else {
+    $pattern = '<tt>[indicator:target|Title]</tt>';
+  }
+  $text .= t('Freelinking helps you easily create HTML links. Links take the form of !pattern.',
+    array('!pattern' => $pattern));
+
+  $plugins = freelinking_get_plugins();
+
+  if ($long == FALSE) {
+    $default_tip = $plugins[variable_get('freelinking_default', 'nodetitle')]['tip'];
+    if ($default_tip) {
+      $text .= ' By default (no indicator): ' . $default_tip;
+    }
+    return $text;
+  }
+
+  $text = '<h4>' . t('Freelinking') . '</h4>' . $text;
+  $text .= '<br />';
+  $text .= t('Below is a list of available types of freelinks you may use, organized as <strong>Plugin Name</strong>: <em>[indicator]</em>.');
+
+  foreach ($plugins as $name => $plugin) {
+    $tips[$name] = '<strong>' . drupal_ucfirst($name) . '</strong> <em>[' . $plugin['indicator'] . ']</em>';
+    if ($plugin['tip']) {
+      $tips[$name] .= ' — ' . $plugin['tip'];
+    }
+  }
+  $text .= theme('item_list', array('items' => $tips));
+  return $text;
+}
+
 
 /**
  * Implements hook_freelinking().
@@ -176,47 +223,6 @@ function freelinking_freelink_alter(&$link, $target, $plugin_name, $plugin) {
   else {
     $link[2]['attributes']['class'] .= ' freelink-internal';
   }
-}
-
-/**
- * Implements hook_filter_tips().
- */
-function freelinking_filter_tips_XXX($delta, $format, $long = FALSE) {
-  $syntax = variable_get('freelinking_syntax_mode', 'double_bracket');
-  if ($syntax == 'double_bracket') {
-    $pattern = '<tt>[[indicator:target|Title]]</tt>';
-  }
-  elseif ($syntax == 'markdown') {
-    $pattern = '<tt>[Title](indicator:target)</tt>';
-  }
-  else {
-    $pattern = '<tt>[indicator:target|Title]</tt>';
-  }
-  $text .= t('Freelinking helps you easily create HTML links. Links take the form of !pattern.',
-    array('!pattern' => $pattern));
-
-  $plugins = freelinking_get_plugins();
-
-  if ($long == FALSE) {
-    $default_tip = $plugins[variable_get('freelinking_default', 'nodetitle')]['tip'];
-    if ($default_tip) {
-      $text .= ' By default (no indicator): ' . $default_tip;
-    }
-    return $text;
-  }
-
-  $text = '<h4>' . t('Freelinking') . '</h4>' . $text;
-  $text .= '<br />';
-  $text .= t('Below is a list of available types of freelinks you may use, organized as <strong>Plugin Name</strong>: <em>[indicator]</em>.');
-
-  foreach ($plugins as $name => $plugin) {
-    $tips[$name] = '<strong>' . drupal_ucfirst($name) . '</strong> <em>[' . $plugin['indicator'] . ']</em>';
-    if ($plugin['tip']) {
-      $tips[$name] .= ' — ' . $plugin['tip'];
-    }
-  }
-  $text .= theme('item_list', array('items' => $tips));
-  return $text;
 }
 
 /**
