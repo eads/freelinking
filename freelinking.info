@@ -4,14 +4,6 @@ package = Input filters
 core = 7.x
 dependencies[] = filter
 
-
-; Information added by drupal.org packaging script on 2009-11-09
-version = "6.x-3.x-dev"
-core = 7.x
-project = "freelinking"
-datestamp = "1257768612"
-
-
 files[] = freelinking.api.php
 files[] = freelinking.forms.inc
 files[] = freelinking.module
