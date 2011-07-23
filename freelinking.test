@@ -27,33 +27,39 @@ class FreelinkingTest extends DrupalWebTestCase {
 
     // Create user
     $this->privileged_user = $this->drupalCreateUser(array(
-      'administer nodes',
+      'bypass node access',
       'administer filters',
     ));
     $this->drupalLogin($this->privileged_user);
 
     // Activate freelinking input filter
     $edit = array(
-      'filters[freelinking/0]' => 1,
+      'filters[freelinking][status]' => 1,
     );
-    $this->drupalPost('admin/config/content/formats/1', $edit, t('Save configuration'));
-    $this->assertText(t('The input format settings have been updated.'));
-    $this->drupalGet('admin/config/content/formats/1');
-    $this->assertFieldChecked('edit-filters-freelinking/0',
+    $this->drupalPost('admin/config/content/formats/filtered_html', $edit, t('Save configuration'));
+    $this->assertText(t('The text format Filtered HTML has been updated.'));
+    $this->drupalGet('admin/config/content/formats/filtered_html');
+    $this->assertFieldChecked('edit-filters-freelinking-status',
                               t('Freelinking input filter has been activated'));
 
     // Create a couple of pages which will be freelinked
     $edit = array();
     $edit['title'] = t('First page');
-    $edit['body'] = t('Body of first page');
+    $edit['body[und][0][value]'] = t('Body of first page');
     $this->drupalPost('node/add/page', $edit, t('Save'));
-    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
+    $this->assertText(t('Basic page @title has been created.', array('@title' => $edit['title'])));
 
     $edit = array();
     $edit['title'] = t('Second page');
-    $edit['body'] = t('Body of second page');
+    $edit['body[und][0][value]'] = t('Body of second page');
     $this->drupalPost('node/add/page', $edit, t('Save'));
-    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
+    $this->assertText(t('Basic page @title has been created.', array('@title' => $edit['title'])));
+
+    $edit = array();
+    $edit['title'] = t('Third page');
+    $edit['body[und][0][value]'] = t('Body of third page');
+    $this->drupalPost('node/add/page', $edit, t('Save'));
+    $this->assertText(t('Basic page @title has been created.', array('@title' => $edit['title'])));
 
     // Upload Drupal logo to files directory to test file and image plugins
     $root_path = $_SERVER['DOCUMENT_ROOT'];
@@ -71,7 +77,7 @@ class FreelinkingTest extends DrupalWebTestCase {
     // Create node that will contain a sample of each plugin
     $edit = array();
     $edit['title'] = t('Testing all freelinking plugins');
-    $edit['body'] = '<ul>' .
+    $edit['body[und][0][value]'] = '<ul>' .
                     '  <li>Drupalproject:  [[drupalproject:freelinking]]</li>' .
                     '  <li>Drupalorgnid:   [[drupalorgnid:1]]</li>' .
                     '  <li>One inch frame: [[oif:about-one-inch-frame]]</li>' .
@@ -87,11 +93,11 @@ class FreelinkingTest extends DrupalWebTestCase {
                     '  <li>Wikibooks:      [[wikibooks:Main_Page]]</li>' .
                     '  <li>Wikinews:       [[wikinews:Main_Page]]</li>' .
                     '  <li>User:           [[u:' . $this->privileged_user->uid . ']]</li>' .
-                    '  <li>Path:           [[path:/node/1]]</li>' .
+                    '  <li>Path:           [[path:/node/3]]</li>' .
                     '  <li>Wikipedia:      [[wikipedia:Main_Page]]</li>' .
                     '</ul>';
     $this->drupalPost('node/add/page', $edit, t('Save'));
-    $this->assertText(t('Page @title has been created.', array('@title' => $edit['title'])));
+    $this->assertText(t('Basic page @title has been created.', array('@title' => $edit['title'])));
 
     // Verify each freelink plugin
     $this->assertLinkByHref('http://drupal.org/project/freelinking', 0,
@@ -118,11 +124,9 @@ class FreelinkingTest extends DrupalWebTestCase {
                             t('Wikibooks freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wikinews.org/wiki/Main_Page', 0,
                             t('Wikinews freelink was generated successfully.'));
-    $this->assertLinkByHref('http://en.wikinews.org/wiki/Main_Page', 0,
-                            t('Wikinews freelink was generated successfully.'));
     $this->assertLink($this->privileged_user->name, 0,
                       t('User freelink was generated successfully.'));
-    $this->assertLink(t('First page'), 1, t('Path freelink was generated successfully.'));
+    $this->assertLink(t('Third page'), 0, t('Path freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wikipedia.org/wiki/Main_Page', 0,
                             t('Wikipedia freelink was generated successfully.'));
   }
