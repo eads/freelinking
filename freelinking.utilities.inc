@@ -84,8 +84,8 @@ function freelinking_get_plugins($format = 'all', $reset = FALSE) {
     foreach ($freelinking as $name => &$plugin) {
       // Confirm correct structure in plugin
       if (!$plugin['indicator']
-         || (!$plugin['replacement'] && !$plugin['callback'])
-         || ($plugin['callback'] && !function_exists($plugin['callback']))) {
+         || (!array_key_exists('replacement', $plugin) && !array_key_exists('callback', $plugin))
+         || (array_key_exists('callback', $plugin) && !function_exists($plugin['callback']))) {
         drupal_set_message(t('Freelinking plugin "!plugin" is invalid.',
             array('!plugin' => $name)), 'warning');
         watchdog('filter', 'Freelinking plugin "!plugin" is invalid.',
@@ -101,9 +101,10 @@ function freelinking_get_plugins($format = 'all', $reset = FALSE) {
       }
 
       // Rearrange weight scheme to use core comparison function.
-      $plugin['#weight'] = $plugin['weight'];
-      unset($plugin['weight']);
-
+      if (array_key_exists('weight', $plugin)) {
+        $plugin['#weight'] = $plugin['weight'];
+        unset($plugin['weight']);
+      }
       // Set explicit defaults.
       $plugin += array(
         'enabled' => TRUE,

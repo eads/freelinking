@@ -63,11 +63,12 @@ class FreelinkingTest extends DrupalWebTestCase {
 
     // Upload Drupal logo to files directory to test file and image plugins
     $root_path = $_SERVER['DOCUMENT_ROOT'];
-    $image = $root_path . '/themes/garland/logo.png';
+    $image = new stdClass();
+    $image->uri = $root_path . '/themes/garland/logo.png';
     file_copy($image);
     $this->assertTrue(is_string(drupal_realpath('public://logo.png')),
                       t('Image @image was saved successfully',
-                        array('@image' => $image)));
+                        array('@image' => $image->uri)));
   }
 
   /**
