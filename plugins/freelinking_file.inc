@@ -19,7 +19,7 @@ function freelinking_file_file_callback($target, $plugin) {
   // Is relative path?
   $pos = strpos($target['dest'], '/');
   if ($pos === FALSE || $pos > 0) {
-    if ($target['other']['file_path']) {
+    if (array_key_exists('other', $target) && $target['other']['file_path']) {
       $path = $target['other']['file_path'];
     }
     else {

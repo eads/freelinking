@@ -185,7 +185,7 @@ function freelinking_freelink_alter($context) {
   $plugin = $context['plugin'];
 
   // not a valid link
-  if (!$link[1]) {
+  if (!array_key_exists(1, $link)) {
     $link['error'] = t('Invalid Link');
     return;
   }
@@ -200,7 +200,7 @@ function freelinking_freelink_alter($context) {
   }
 
   // Set an empty tooltip as the URL (unless the target has one)
-  if (!$link[2]['attributes']['title']) {
+  if (array_key_exists('attributes', $link[2]) && !$link[2]['attributes']['title']) {
     $link[2]['attributes']['title'] =
       $target['tooltip'] ? $target['tooltip'] : $link[1];
   }
@@ -216,7 +216,7 @@ function freelinking_freelink_alter($context) {
 
   // Is this an internal or external link?
   $parts = parse_url($link[1]);
-  if ($parts['host'] && $parts['host'] != $_SERVER['SERVER_NAME']) {
+  if (array_key_exists('host', $parts) && $parts['host'] != $_SERVER['SERVER_NAME']) {
     $link[2]['attributes']['class'] .= ' freelink-external';
   }
   else {
@@ -238,12 +238,12 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
   }
 
   // run the text through translation
-  if ($plugin['translate']) {
+  if (array_key_exists('translate', $plugin)) {
     $target['dest'] = strtr($target['dest'], $plugin['translate']);
   }
 
   // process simple replacement plugins if no callback exists
-  if ($plugin['replacement'] && !array_key_exists('callback', $plugin)) {
+  if (array_key_exists('replacement', $plugin) && !array_key_exists('callback', $plugin)) {
     // %1 is the token all freelinking replacement strings must include
     $url = preg_replace('/%1/', $target['dest'], $plugin['replacement']);
     $link = array('', $url);
@@ -343,9 +343,12 @@ function freelinking_theme() {
  * Theme the Freelink
  */
 function theme_freelink($variables) {
+  $prefix = '';
+  $suffix = '';
+
   $plugin = $variables['plugin'];
   $link = $variables['link'];
-  if ($link['extra']) {
+  if (array_key_exists('extra', $link)) {
     $prefix = $link['extra']['prefix'];
     $suffix = $link['extra']['suffix'];
     unset($link['extra']);

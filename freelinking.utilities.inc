@@ -36,13 +36,14 @@ function freelinking_get_freelink($plugin, $target, $format = 'all', $rendered =
   if (!$rendered || !is_array($link)) {
     return $link;
   }
-  if ($link['failover'] == 'error') {
-    return theme('freelink_error', array($plugin, $link['message']));
+  if (array_key_exists('failover', $link)) {
+    if ($link['failover'] == 'error') {
+      return theme('freelink_error', array($plugin, $link['message']));
+    }
+    if ($link['failover'] == 'none') {
+      return FALSE;
+    }
   }
-  if ($link['failover'] == 'none') {
-    return FALSE;
-  }
-
   if (function_exists('theme_freelink_' . $plugin)) {
     // TODO Please change this theme call to use an associative array for the $variables parameter.
     return theme('freelink_' . $plugin, array('link' => $link));
@@ -138,13 +139,12 @@ function freelinking_internal_tooltip($type, $id) {
       if (module_exists('nodewords')) {
         if (function_exists('nodewords_get_tags')) {
           $metatags = nodewords_get_tags('node', $id);
-          $description = $metatags['description'];
+          $description = check_url($metatags['description']);
+          return truncate_utf8($description, 200, FALSE, TRUE);
         }
       }
       break;
   }
-  $description = check_url($description);
-  return truncate_utf8($description, 200, FALSE, TRUE);
 }
 
 /**

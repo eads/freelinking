@@ -103,7 +103,7 @@ function freelinking_nodetitle_nid_from_title(&$target) {
     $type = check_plain($target['type']);
   }
   else {
-    $type = variable_get('freelinking_nodetitle_searchcontenttype', none);
+    $type = variable_get('freelinking_nodetitle_searchcontenttype', 'none');
   }
 
   $sql = "SELECT title, nid, language FROM {node} WHERE title='%s'";
