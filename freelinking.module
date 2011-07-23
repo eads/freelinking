@@ -51,7 +51,6 @@ function freelinking_filter_info() {
  * Implements filter process callback
  */
 function _freelinking_process($text, $filter) {
-  watchdog('debug', print_r(array($text, $filter), TRUE));
   $freelinking = freelinking_get_plugins();
   $defaultplugin = variable_get('freelinking_default', 'nodetitle');
   $syntax = variable_get('freelinking_match_syntax', 'double_bracket');
@@ -320,16 +319,21 @@ function freelinking_parse_target($target, $plugin = NULL, $separator = NULL) {
  */
 function freelinking_theme() {
   return array(
-    'freelink' => array('theme_freelink','plugin' => NULL, 'link' => NULL),
-    'freelink_error' => array('theme_freelink','plugin' => NULL, 'message' => NULL),
+    'freelink' => array(
+      'variables' => array('plugin' => NULL, 'link' => NULL),
+    ),
+    'freelink_error' => array(
+      'variables' => array('plugin' => NULL, 'message' => NULL),
+    ),
   );
 }
 
 /**
  * Theme the Freelink
  */
-function theme_freelink() {
-  // TODO Number of parameters in this theme funcion does not match number of parameters found in hook_theme.
+function theme_freelink($variables) {
+  $plugin = $variables['plugin'];
+  $link = $variables['link'];
   if ($link['extra']) {
     $prefix = $link['extra']['prefix'];
     $suffix = $link['extra']['suffix'];
@@ -343,8 +347,10 @@ function theme_freelink() {
 /**
  * Theme the error message
  */
-function theme_freelink_error() {
-  // TODO Number of parameters in this theme funcion does not match number of parameters found in hook_theme.
+function theme_freelink_error($variables) {
+  $plugin  = $variables['plugin'];
+  $message = $variables['message'];
+
   if ($message) {
     $message = ': ' . $message;
   }

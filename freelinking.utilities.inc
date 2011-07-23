@@ -37,7 +37,7 @@ function freelinking_get_freelink($plugin, $target, $format = 'all', $rendered =
     return $link;
   }
   if ($link['failover'] == 'error') {
-    return theme('freelink_error', $plugin, $link['message']);
+    return theme('freelink_error', array($plugin, $link['message']));
   }
   if ($link['failover'] == 'none') {
     return FALSE;
@@ -45,9 +45,9 @@ function freelinking_get_freelink($plugin, $target, $format = 'all', $rendered =
 
   if (function_exists('theme_freelink_' . $plugin)) {
     // TODO Please change this theme call to use an associative array for the $variables parameter.
-    return theme('freelink_' . $plugin, $link);
+    return theme('freelink_' . $plugin, array('link' => $link));
   }
-  return theme('freelink', $plugin, $link);
+  return theme('freelink', array('plugin' => $plugin, 'link' => $link));
 }
 
 /**

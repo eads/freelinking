@@ -68,7 +68,8 @@ function hook_freelink_alter(&$link, $target, $plugin_name, $plugin) {
  * In this example, the "pluginname" plugin is themed to become an image
  * to the targeted URL, instead of a link.
  */
-function theme_freelink_pluginname($link) {
+function theme_freelink_pluginname($variables) {
+  $link = $variables['link'];
   // TODO: Should this theme freelink_pluginname be declared in hook_theme()?
   return theme('image', array('path' => $link[1], 'width' => $link[0], 'height' => $link[2]['attributes']['title']));
 }
