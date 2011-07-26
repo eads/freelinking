@@ -178,8 +178,7 @@ function freelinking_freelinking() {
  * Implements hook_freelink_alter().
  * Used here to clean up and standardize links.
  */
-function freelinking_freelink_alter($context) {
-  $link = $context['link'];
+function freelinking_freelink_alter(&$link, $context) {
   $target = $context['target'];
   $plugin_name = $context['plugin_name'];
   $plugin = $context['plugin'];
@@ -193,7 +192,7 @@ function freelinking_freelink_alter($context) {
   if (!$link[0]) {
     $link[0] = $target['text'] ? $target['text'] : $target['target'];
   }
-
+  
   // support html link text unless plugin overrides
   if (array_key_exists('html', $plugin) && $plugin['html'] !== FALSE) {
     $link[2]['html'] = TRUE;
@@ -266,12 +265,11 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
     }
     if (is_array($link) && !array_key_exists('error', $link)) {
       $data = array(
-        'link'   => &$link,
         'target' => $target,
         'plugin_name' => $plugin_name,
         'plugin' => $plugin,
       );
-      drupal_alter('freelink', $data);
+      drupal_alter('freelink', $link, $data);
     }
   }
   // if empty/false, nothing will happen

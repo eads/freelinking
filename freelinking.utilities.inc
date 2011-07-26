@@ -44,6 +44,7 @@ function freelinking_get_freelink($plugin, $target, $format = 'all', $rendered =
       return FALSE;
     }
   }
+  
   if (function_exists('theme_freelink_' . $plugin)) {
     // TODO Please change this theme call to use an associative array for the $variables parameter.
     return theme('freelink_' . $plugin, array('link' => $link));
