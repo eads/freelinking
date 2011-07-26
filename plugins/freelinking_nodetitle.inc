@@ -99,7 +99,7 @@ function freelinking_nodetitle_nid_from_title(&$target) {
   $title = $target['dest'];
 
   // get any content type restriction
-  if ($target['type']) {
+  if (array_key_exists('type', $target)) {
     $type = check_plain($target['type']);
   }
   else {

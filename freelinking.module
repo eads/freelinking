@@ -200,14 +200,14 @@ function freelinking_freelink_alter($context) {
   }
 
   // Set an empty tooltip as the URL (unless the target has one)
-  if (array_key_exists('attributes', $link[2]) && !$link[2]['attributes']['title']) {
+  if (isset($link[2]['attributes'])) {
     $link[2]['attributes']['title'] =
       $target['tooltip'] ? $target['tooltip'] : $link[1];
   }
 
   // standard set of CSS classes
-  $link[2]['attributes']['class'] = rtrim('freelink freelink-'
-    . strtr($plugin_name, ' ', '-') . ' ' . $link[2]['attributes']['class']);
+  $link[2]['attributes']['class'] = rtrim('freelink freelink-' . strtr($plugin_name, ' ', '-') .
+    ' ' . $link[2]['attributes']['class']);
 
   // There was more than one effort to generate the link
   if (isset($target['other']['trace'])) {

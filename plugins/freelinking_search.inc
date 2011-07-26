@@ -95,7 +95,7 @@ function freelinking_google_callback($target, $plugin) {
         array('%dest' => $target['dest'])),
       ),
     ));
-  if ($target['other']['site']) {
+  if (array_key_exists('other', $target) && array_key_exists('site', $target['other'])) {
     $link[2]['query']['as_sitesearch'] = urlencode($target['other']['site']);
   }
   return $link;
