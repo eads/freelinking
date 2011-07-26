@@ -19,7 +19,7 @@ $freelinking['nodetitle'] = array(
  */
 function freelinking_nodetitle_callback($target, $plugin) {
   $node = freelinking_nodetitle_nid_from_title($target);
-
+  
   // if no node was found, identify proceed with configured failover
   if (!$node) {
     return _freelinking_nodetitle_failure($target);
@@ -106,13 +106,12 @@ function freelinking_nodetitle_nid_from_title(&$target) {
     $type = variable_get('freelinking_nodetitle_searchcontenttype', 'none');
   }
 
-  $sql = "SELECT title, nid, language FROM {node} WHERE title='%s'";
+  $sql = "SELECT title, nid, language FROM {node} WHERE title = :title";
   if ($type != 'none') {
-    $sql .= " AND type='%s'";
-    $result = db_query($sql, array($title, $type));
+    $sql .= " AND type = :type";
+    $result = db_query($sql, array(':title' => $title, ':type' => $type));
   }
-  $result = db_query($sql, array($title));
-
+  $result = db_query($sql, array(':title' => $title));
   $set = array();
   foreach ($result as $record) {
     $set[] = $record;
