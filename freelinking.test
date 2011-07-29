@@ -69,7 +69,7 @@ class FreelinkingTest extends DrupalWebTestCase {
     // Upload Drupal logo to files directory to test file and image plugins
     $root_path = $_SERVER['DOCUMENT_ROOT'];
     $image = new stdClass();
-    $image->uri = $root_path . '/themes/garland/logo.png';
+    $image->uri = $root_path . '/themes/bartik/logo.png';
     file_copy($image);
     $this->assertTrue(is_string(drupal_realpath('public://logo.png')),
                       t('Image @image was saved successfully',
@@ -79,7 +79,7 @@ class FreelinkingTest extends DrupalWebTestCase {
   /**
    * Tests all plugins
    */
-  public function testFreelinkingPlugins() {
+  public function testFreelinkingPlugins() { 
     // Create node that will contain a sample of each plugin
     $edit = array();
     $edit['title'] = t('Testing all freelinking plugins');
@@ -91,8 +91,7 @@ class FreelinkingTest extends DrupalWebTestCase {
                     '  <li>Search:         [[search:test]]</li>' .
                     '  <li>Nid:            [[nid:2]]</li>' .
                     '  <li>Google:         [[google:drupal]]</li>' .
-                    '  <li>Image:          [[image:logo.png]]</li>' .
-                    '  <li>File:           [[image:logo.png]]</li>' .
+                    '  <li>File:           [[file:logo.png]]</li>' .
                     '  <li>Wikisource:     [[wikisource:Main Page]]</li>' .
                     '  <li>Wiktionary:     [[wiktionary:Main Page]]</li>' .
                     '  <li>Wikiquote:      [[wikiquote:Main Page]]</li>' .
@@ -118,8 +117,7 @@ class FreelinkingTest extends DrupalWebTestCase {
     $this->assertLink(t('Second page'), 0, t('Nid freelink was generated successfully.'));
     $this->assertLinkByHref('http://www.google.com/search?q=drupal&hl=en', 0,
                             t('Google freelink was generated successfully.'));
-    $this->assertLink('logo.png', 0, t('Image freelink was generated successfully.'));
-    $this->assertLink('logo.png', 1, t('File freelink was generated successfully.'));
+    $this->assertLink('logo.png', 0, t('File freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wikisource.org/wiki/Main_Page', 0,
                             t('Wikisource freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wiktionary.org/wiki/Main_Page', 0,
