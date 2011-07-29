@@ -35,7 +35,11 @@ class FreelinkingTest extends DrupalWebTestCase {
     // Activate freelinking input filter
     $edit = array(
       'filters[freelinking][status]' => 1,
-      'filters[freelinking][weight]' => -50,
+      'filters[freelinking][weight]' => 0,
+      'filters[filter_url][weight]' => 1,
+      'filters[filter_html][weight]' => 2,
+      'filters[filter_autop][weight]' => 3,
+      'filters[filter_htmlcorrector][weight]' => 4,
     );
     $this->drupalPost('admin/config/content/formats/filtered_html', $edit, t('Save configuration'));
     $this->assertText(t('The text format Filtered HTML has been updated.'));
@@ -90,7 +94,7 @@ class FreelinkingTest extends DrupalWebTestCase {
                     '  <li>Image:          [[image:logo.png]]</li>' .
                     '  <li>File:           [[image:logo.png]]</li>' .
                     '  <li>Wikisource:     [[wikisource:Main Page]]</li>' .
-                    '  <li>Wiktionary:     [[wiktionary:Wiktionary:Main Page]]</li>' .
+                    '  <li>Wiktionary:     [[wiktionary:Main Page]]</li>' .
                     '  <li>Wikiquote:      [[wikiquote:Main Page]]</li>' .
                     '  <li>Wikibooks:      [[wikibooks:Main Page]]</li>' .
                     '  <li>Wikinews:       [[wikinews:Main Page]]</li>' .
@@ -118,7 +122,7 @@ class FreelinkingTest extends DrupalWebTestCase {
     $this->assertLink('logo.png', 1, t('File freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wikisource.org/wiki/Main_Page', 0,
                             t('Wikisource freelink was generated successfully.'));
-    $this->assertLinkByHref('http://en.wiktionary.org/wiki/Wiktionary:Main_Page', 0,
+    $this->assertLinkByHref('http://en.wiktionary.org/wiki/Main_Page', 0,
                             t('Wiktionary freelink was generated successfully.'));
     $this->assertLinkByHref('http://en.wikiquote.org/wiki/Main_Page', 0,
                             t('Wikiquote freelink was generated successfully.'));

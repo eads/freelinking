@@ -32,6 +32,13 @@ $freelinking['wiktionary'] = array(
   'tip' => t('Link to a wiktionary page.'),
 );
 
+$freelinking['wikinews'] = array(
+  'indicator' => '/w(ikinews|n)/',
+  'translate' => array(' ' => '_'),
+  'replacement' => 'http://' . variable_get('freelinking_wikipedia_languagecode', language_default('language')) . '.wikinews.org/wiki/%1',
+  'tip' => t('Link to a wikinews page.'),
+);
+
 $freelinking['wikisource'] = array(
   'indicator' => '/w(ikisource|s)/',
   'translate' => array(' ' => '_'),
@@ -46,12 +53,6 @@ $freelinking['wikibooks'] = array(
   'tip' => t('Link to a wikibooks page.'),
 );
 
-$freelinking['wikinews'] = array(
-  'indicator' => '/w(ikinews|n)/',
-  'translate' => array(' ' => '_'),
-  'replacement' => 'http://' . variable_get('freelinking_wikipedia_languagecode', language_default('language')) . '.wikinews.org/wiki/%1',
-  'tip' => t('Link to a wikinews page.'),
-);
 
 /**
  * @todo Please document this function.
