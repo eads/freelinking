@@ -16,8 +16,10 @@ $freelinking['drupalorgnid'] = array(
 );
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Builds a link to a node in Drupal.org.
+ * 
+ * @return
+ *   array with link details.
  */
 function freelinking_drupalorgnid_callback($target, $plugin) { // resolve nid to a node title
   if (!is_numeric($target['dest'])) {
@@ -48,8 +50,10 @@ function freelinking_drupalorgnid_callback($target, $plugin) { // resolve nid to
 } // endfunction freelinking_drupalorgnid_callback
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Settings form for drupalorgnid plugin 
+ * 
+ * @return
+ *   array form settings.
  */
 function freelinking_drupalorgnid_settings() {
   $form['freelinking_drupalorgnid_http_request'] = array(

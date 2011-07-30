@@ -55,8 +55,10 @@ $freelinking['wikibooks'] = array(
 
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Settings form for wikipedia plugin
+ *
+ * @return
+ *   array with form configuration
  */
 function freelinking_wikipedia_settings() {
   $form['freelinking_wikipedia_languagecode'] = array(

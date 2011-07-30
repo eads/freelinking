@@ -24,8 +24,10 @@ $freelinking['path'] = array(
 );
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Builds a link to an internal url 
+ *
+ * @return
+ *   array with link properties
  */
 function freelinking_path_callback($target, $plugin) {
   // the first character is not a forward slash
@@ -58,8 +60,10 @@ function freelinking_path_callback($target, $plugin) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Settings form for path module 
+ * 
+ * @return
+ *   array form properties
  */
 function freelinking_path_settings() {
   $form['freelinking_path_basepath'] = array(

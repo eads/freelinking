@@ -17,8 +17,10 @@ $freelinking['nid'] = array(
 );
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Builds a link to a node in the site 
+ * 
+ * @return
+ *   an array with node properties to build the link.
  */
 function freelinking_nid_callback($target, $plugin) { // resolve $target into a link to the node or display failure
   if (!is_numeric($target['dest'])) {

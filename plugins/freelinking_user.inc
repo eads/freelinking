@@ -14,8 +14,10 @@ $freelinking['user'] = array(
 );
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Builds a link to a user profile
+ *
+ * @return
+ *   array to build the link
  */
 function freelinking_user_callback($target, $plugin) {
   if (is_numeric($target['dest'])) {

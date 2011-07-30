@@ -21,8 +21,10 @@ $freelinking['google'] = array(
 );
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Builds a link to search for something
+ * 
+ * @return
+ *   an array to build the link.
  */
 function freelinking_search_callback($target, $plugin) {
   global $base_url;
