@@ -35,7 +35,7 @@ function freelinking_nodetitle_callback($target, $plugin) {
   return array($node->title, 'node/' . $node->nid, array(
       'attributes' => array('title' => $tooltip),
       'language' => $node->language,
-    ));
+  ));
 }
 
 /**
@@ -99,7 +99,7 @@ function freelinking_nodetitle_nid_from_title(&$target) {
   $title = $target['dest'];
 
   // get any content type restriction
-  if (array_key_exists('type', $target)) {
+  if (isset($target['type'])) {
     $type = check_plain($target['type']);
   }
   else {

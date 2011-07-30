@@ -166,7 +166,7 @@ function freelinking_freelinking() {
 
   // The freelinking variable is specified by included files.
   foreach ($freelinking as $plugin => $definition) {
-    if (!array_key_exists('settings', $definition)) {
+    if (!isset($definition['settings'])) {
       $freelinking[$plugin]['settings'] = 'freelinking_' . $plugin . '_settings';
     }
   }
@@ -194,7 +194,7 @@ function freelinking_freelink_alter(&$link, $context) {
   }
   
   // support html link text unless plugin overrides
-  if (array_key_exists('html', $plugin) && $plugin['html'] !== FALSE) {
+  if (isset($plugin['html']) && $plugin['html'] !== FALSE) {
     $link[2]['html'] = TRUE;
   }
 
@@ -203,10 +203,13 @@ function freelinking_freelink_alter(&$link, $context) {
     $link[2]['attributes']['title'] =
       $target['tooltip'] ? $target['tooltip'] : $link[1];
   }
+  else {
+    $link[2]['attributes'] = array();
+  }
 
   // standard set of CSS classes
   $link[2]['attributes']['class'] = rtrim('freelink freelink-' . strtr($plugin_name, ' ', '-') .
-    ' ' . $link[2]['attributes']['class']);
+    ' ' . (isset($link[2]['attributes']['class'])?$link[2]['attributes']['class']:''));
 
   // There was more than one effort to generate the link
   if (isset($target['other']['trace'])) {
@@ -215,7 +218,7 @@ function freelinking_freelink_alter(&$link, $context) {
 
   // Is this an internal or external link?
   $parts = parse_url($link[1]);
-  if (array_key_exists('host', $parts) && $parts['host'] != $_SERVER['SERVER_NAME']) {
+  if (isset($parts['host']) && $parts['host'] != $_SERVER['SERVER_NAME']) {
     $link[2]['attributes']['class'] .= ' freelink-external';
   }
   else {
@@ -237,19 +240,19 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
   }
 
   // run the text through translation
-  if (array_key_exists('translate', $plugin)) {
+  if (isset($plugin['translate'])) {
     $target['dest'] = strtr($target['dest'], $plugin['translate']);
   }
 
   // process simple replacement plugins if no callback exists
-  if (array_key_exists('replacement', $plugin) && !array_key_exists('callback', $plugin)) {
+  if (isset($plugin['replacement']) && !isset($plugin['callback'])) {
     // %1 is the token all freelinking replacement strings must include
     $url = preg_replace('/%1/', $target['dest'], $plugin['replacement']);
     $link = array('', $url);
   }
 
   // process replacement callback
-  if (array_key_exists('callback', $plugin) && function_exists($plugin['callback'])) {
+  if (isset($plugin['callback']) && function_exists($plugin['callback'])) {
     $link = call_user_func_array($plugin['callback'],
       array($target, $plugin));
   }
@@ -257,13 +260,14 @@ function _freelinking_build_freelink($freelinking, $plugin_name, $target) {
   // Standardize link, grab authoritative "structured" version
   // designate the rendered text for display
   if (is_array($link)) {
-    if (array_key_exists('failover', $link) && $link['failover'] != 'error' && $link['failover'] != 'none') {
-      $target = $link['target'] ? $link['target'] : $target;
+    if (isset($link['failover']) && $link['failover'] != 'error' && 
+        $link['failover'] != 'none') {
+      $target = isset($link['target']) ? $link['target'] : $target;
       $target['other']['trace'][] = $plugin_name;
       unset($freelinking[$plugin_name]);
       return _freelinking_build_freelink($freelinking, $link['failover'], $target);
     }
-    if (is_array($link) && !array_key_exists('error', $link)) {
+    if (is_array($link) && !isset($link['error'])) {
       $data = array(
         'target' => $target,
         'plugin_name' => $plugin_name,
@@ -314,8 +318,8 @@ function freelinking_parse_target($target, $plugin = NULL, $separator = NULL) {
     }
   }
   // Convert URL-encoded text into something readable for link text & tooltip.
-  $args['text'] = array_key_exists('text', $args)?urldecode($args['text']):NULL;
-  $args['tooltip'] = array_key_exists('tooltip', $args)?urldecode($args['tooltip']):NULL;
+  $args['text'] = isset($args['text'])?urldecode($args['text']):NULL;
+  $args['tooltip'] = isset($args['tooltip'])?urldecode($args['tooltip']):NULL;
   return $args;
 }
 
@@ -346,7 +350,7 @@ function theme_freelink($variables) {
 
   $plugin = $variables['plugin'];
   $link = $variables['link'];
-  if (array_key_exists('extra', $link)) {
+  if (isset($link['extra'])) {
     $prefix = $link['extra']['prefix'];
     $suffix = $link['extra']['suffix'];
     unset($link['extra']);

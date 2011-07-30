@@ -20,7 +20,7 @@ $freelinking['file'] = array(
 function freelinking_file_file_callback($target, $plugin) {
   // Remove slash if it's present at first character
   $path = preg_replace('/^\//', '', $target['dest']);
-  if (array_key_exists('other', $target) && $target['other']['file_path']) {
+  if (isset($target['other']['file_path'])) {
     $path = $target['other']['file_path'] . '/' . $path;
   }
   else {
