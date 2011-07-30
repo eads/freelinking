@@ -33,7 +33,7 @@ function freelinking_nodetitle_callback($target, $plugin) {
   }
   // return link structure
   return array($node->title, 'node/' . $node->nid, array(
-      'attributes' => array('title' => $tooltip),
+      'attributes' => array('title' => $target['tooltip']),
       'language' => $node->language,
   ));
 }
